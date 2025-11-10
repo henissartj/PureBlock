@@ -1,0 +1,35 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@300;400;500;600&display=swap');
+
+*{margin:0;padding:0;box-sizing:border-box}
+body{width:320px;height:480px;background:linear-gradient(135deg,#0f0f1a 0%,#1a1a2e 100%);color:#e0e0ff;font-family:'Inter',sans-serif;overflow:hidden;user-select:none;transition:all .4s ease}
+.container{padding:32px 24px;text-align:center;height:100%;display:flex;flex-direction:column;justify-content:space-between}
+h1{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:28px;letter-spacing:-.5px;background:linear-gradient(90deg,#a0d8ff,#e0c3fc);-webkit-background-clip:text;color:transparent;-webkit-text-fill-color:transparent;margin-bottom:4px}
+.slogan{font-size:13px;color:#a0a0cc;font-weight:300;letter-spacing:1px;margin-bottom:24px}
+
+.toggle-container{display:flex;justify-content:center;margin:12px 0 8px}
+#checkbox{display:none}
+.switch{position:relative;width:70px;height:70px;background-color:rgb(99,99,99);border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;border:2px solid rgb(126,126,126);box-shadow:0 0 3px rgb(2,2,2) inset;transition:all .5s cubic-bezier(.25,.8,.25,1)}
+.switch svg{width:1.2em;transition:all .3s}
+.switch svg path{fill:rgb(48,48,48);transition:fill .3s}
+#checkbox:checked + .switch{box-shadow:0 0 1px rgb(151,243,255) inset,0 0 2px rgb(151,243,255) inset,0 0 10px rgb(151,243,255) inset,0 0 40px rgb(151,243,255),0 0 100px rgb(151,243,255),0 0 5px rgb(151,243,255);border:2px solid #fff;background-color:rgb(146,180,184)}
+#checkbox:checked + .switch svg{filter:drop-shadow(0 0 5px rgb(151,243,255))}
+#checkbox:checked + .switch svg path{fill:#fff}
+
+.options{text-align:left;margin:12px 0 8px;font-size:12px;color:#a0a0cc}
+.options label{display:block;margin-bottom:6px;font-weight:500}
+#ua-select{-webkit-appearance:none;appearance:none;background:rgba(255,255,255,.06);border:1px solid #444466;color:#e0e0ff;padding:8px 32px 8px 12px;border-radius:8px;font-size:13px;font-family:'Inter',sans-serif;width:100%;cursor:pointer;transition:all .3s ease;position:relative;outline:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23a0d8ff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;background-size:14px}
+#ua-select:hover{border-color:#a0d8ff;background:rgba(160,216,255,.08)}
+#ua-select option{background-color:#0f0f1a;color:#e0e0ff}
+
+.alert-toggle{display:flex;align-items:center;gap:8px;cursor:pointer;margin-top:8px;font-size:11px;color:#9fa0c8}
+.alert-toggle input{transform:scale(1.1)}
+
+.stats{display:flex;justify-content:space-around;margin:24px 0 12px;font-family:'Space Grotesk',sans-serif}
+.stat{text-align:center}
+.stat span{display:block;font-size:24px;font-weight:500;color:#fff}
+.stat p{font-size:11px;color:#8888aa;margin-top:4px;text-transform:uppercase;letter-spacing:1px}
+
+body.off h1{background:linear-gradient(90deg,#555577,#777799);-webkit-background-clip:text;color:transparent;-webkit-text-fill-color:transparent;opacity:.7}
+body.off .slogan{color:#555577;opacity:.6}
+body.off .stat span{color:#666688}
+body.off .stat p{color:#444455}

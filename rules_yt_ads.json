@@ -1,0 +1,83 @@
+[
+  {
+    "id": 1,
+    "priority": 1,
+    "action": { "type": "block" },
+    "condition": {
+      "urlFilter": "*://*.googleads.g.doubleclick.net/*",
+      "resourceTypes": ["script", "image", "media", "xmlhttprequest", "sub_frame"]
+    }
+  },
+  {
+    "id": 2,
+    "priority": 1,
+    "action": { "type": "block" },
+    "condition": {
+      "urlFilter": "*://*.doubleclick.net/pagead/*",
+      "resourceTypes": ["script", "image", "media", "xmlhttprequest"]
+    }
+  },
+  {
+    "id": 3,
+    "priority": 1,
+    "action": { "type": "block" },
+    "condition": {
+      "urlFilter": "*pagead/lvz*",
+      "resourceTypes": ["script", "xmlhttprequest", "image", "media"]
+    }
+  },
+  {
+    "id": 4,
+    "priority": 1,
+    "action": { "type": "block" },
+    "condition": {
+      "urlFilter": "*pagead/js/adsbygoogle.js*",
+      "resourceTypes": ["script"]
+    }
+  },
+  {
+    "id": 5,
+    "priority": 1,
+    "action": { "type": "block" },
+    "condition": {
+      "urlFilter": "*://*.youtube.com/api/stats/ads*",
+      "resourceTypes": ["xmlhttprequest"]
+    }
+  },
+  {
+    "id": 6,
+    "priority": 1,
+    "action": { "type": "block" },
+    "condition": {
+      "urlFilter": "*://*.youtube.com/get_midroll_info*",
+      "resourceTypes": ["xmlhttprequest"]
+    }
+  },
+  {
+    "id": 7,
+    "priority": 1,
+    "action": { "type": "block" },
+    "condition": {
+      "urlFilter": "*://*.youtube.com/youtubei/v1/player/ad*",
+      "resourceTypes": ["xmlhttprequest"]
+    }
+  },
+  {
+    "id": 8,
+    "priority": 1,
+    "action": { "type": "block" },
+    "condition": {
+      "urlFilter": "*://*.youtube.com/pagead/*",
+      "resourceTypes": ["xmlhttprequest", "media", "script"]
+    }
+  },
+  {
+    "id": 9,
+    "priority": 1,
+    "action": { "type": "block" },
+    "condition": {
+      "urlFilter": "*://*.youtube.com/api/ads/*",
+      "resourceTypes": ["xmlhttprequest", "script"]
+    }
+  }
+]
