@@ -4,9 +4,7 @@
 **L'extension open-source légère qui libère YouTube des pubs**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge&logo=opensourceinitiative)](https://github.com/henissartj/PureBlock/blob/main/LICENSE)
-[![Code Size](https://img.shields.io/github/languages/code-size/henissartj/PureBlock?style=for-the-badge&color=informational)](https://github.com/henissartj/PureBlock)
 [![Last Commit](https://img.shields.io/github/last-commit/henissartj/PureBlock?style=for-the-badge&color=success)](https://github.com/henissartj/PureBlock/commits/main)
-[![Stars](https://img.shields.io/github/stars/henissartj/PureBlock?style=for-the-badge&color=yellow)](https://github.com/henissartj/PureBlock/stargazers)
 
 > **Naviguez sans interruption. Regardez sans compromis.**
 
