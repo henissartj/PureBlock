@@ -10,7 +10,7 @@
 
 </div>
 
-<img src="images/extension.png" alt="Interface PureBlock" width="600"/>
+<img src="images/extension" alt="Interface PureBlock" width="600"/>
 
 ---
 
