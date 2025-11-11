@@ -7,23 +7,47 @@ let idleScheduled = false;
 let sleeping = false;
 let lastAdTs = Date.now();
 
-const SLEEP_AFTER_MS = 3 * 60 * 1000;
+const SLEEP_AFTER_MS = 3 * 60 * 1000; // 3 minutes d'inactivité pub
 
+// Chargement initial des paramètres
 api.storage.local.get(["enabled", "alertsEnabled"], (data) => {
   enabled = data.enabled !== false;
   alertsEnabled = data.alertsEnabled !== false;
-  if (enabled) bootstrap();
+
+  if (enabled) {
+    bootstrap();
+  } else {
+    sleeping = true;
+  }
 });
 
+// Réagit aux changements de storage (popup / options)
 api.storage.onChanged.addListener((changes) => {
   if ("enabled" in changes) {
-    enabled = changes.enabled.newValue;
-    enabled ? wake() : sleep();
+    const newVal = changes.enabled.newValue !== false;
+    enabled = newVal;
+
+    if (!newVal) {
+      // Désactivation → on se met en sommeil proprement
+      sleep();
+    } else {
+      // Activation → si jamais lancé, on réveille, sinon on bootstrap
+      sleeping = false;
+      if (!observer) {
+        bootstrap();
+      } else {
+        wake(true);
+      }
+    }
   }
-  if ("alertsEnabled" in changes) alertsEnabled = changes.alertsEnabled.newValue;
+
+  if ("alertsEnabled" in changes) {
+    alertsEnabled = changes.alertsEnabled.newValue !== false;
+  }
 });
 
 function bootstrap() {
+  if (!enabled) return;
   initPreloadGuard();
   observeAds();
   safeClean();
@@ -32,16 +56,25 @@ function bootstrap() {
 
 function observeAds() {
   if (observer || !enabled) return;
+
   observer = new MutationObserver(() => {
     if (!enabled || sleeping || idleScheduled) return;
+
     idleScheduled = true;
     const cb = () => {
       idleScheduled = false;
-      if (enabled && !sleeping) safeClean();
+      if (enabled && !sleeping) {
+        safeClean();
+      }
     };
-    if ("requestIdleCallback" in window) requestIdleCallback(cb, { timeout: 120 });
-    else setTimeout(cb, 80);
+
+    if ("requestIdleCallback" in window) {
+      requestIdleCallback(cb, { timeout: 120 });
+    } else {
+      setTimeout(cb, 80);
+    }
   });
+
   observer.observe(document.documentElement, {
     childList: true,
     subtree: true,
@@ -51,7 +84,9 @@ function observeAds() {
 
 function stopObserver() {
   if (observer) {
-    observer.disconnect();
+    try {
+      observer.disconnect();
+    } catch (e) {}
     observer = null;
   }
 }
@@ -61,55 +96,80 @@ function sleep() {
   stopObserver();
 }
 
-function wake() {
-  if (!enabled || !sleeping) return;
-  sleeping = false;
-  lastAdTs = Date.now();
-  observeAds();
-  safeClean();
+function wake(fromNav = false) {
+  if (!enabled) return;
+
+  if (sleeping || fromNav || !observer) {
+    sleeping = false;
+    lastAdTs = Date.now();
+    observeAds();
+    safeClean();
+  }
 }
 
 function hookNavigationWake() {
-  window.addEventListener("yt-navigate-finish", wake, { passive: true });
+  // Evénement interne YouTube SPA
+  window.addEventListener("yt-navigate-finish", () => wake(true), {
+    passive: true
+  });
 
+  // Fallback: interception des changements d'URL SPA
   let lastUrl = location.href;
+
   const onUrlChange = () => {
     if (location.href !== lastUrl) {
       lastUrl = location.href;
-      wake();
+      wake(true);
     }
   };
 
   const wrapHistory = (fnName) => {
-    const orig = history[fnName];
-    history[fnName] = function (...args) {
-      const res = orig.apply(this, args);
-      onUrlChange();
-      return res;
-    };
+    try {
+      const orig = history[fnName];
+      if (typeof orig !== "function") return;
+      history[fnName] = function (...args) {
+        const res = orig.apply(this, args);
+        try {
+          onUrlChange();
+        } catch (e) {}
+        return res;
+      };
+    } catch (e) {}
   };
+
   wrapHistory("pushState");
   wrapHistory("replaceState");
 
-  window.addEventListener("popstate", onUrlChange, { passive: true });
+  window.addEventListener("popstate", () => {
+    try {
+      onUrlChange();
+    } catch (e) {}
+  }, { passive: true });
 }
 
 function initPreloadGuard() {
   try {
     const head = document.head || document.documentElement;
     if (!head) return;
+
     const origAppend = head.appendChild;
+    if (head._pureblockGuardPatched) return;
+    head._pureblockGuardPatched = true;
+
     head.appendChild = function (node) {
       try {
         if (
           node?.tagName === "LINK" &&
-          /^(preload|prefetch)$/i.test(node.rel) &&
-          /pagead|doubleclick|googlesyndication|adservice/i.test(node.href)
-        ) return node;
-      } catch {}
+          /^(preload|prefetch)$/i.test(node.rel || "") &&
+          /pagead|doubleclick|googlesyndication|adservice/i.test(node.href || "")
+        ) {
+          // On bloque silencieusement ces préloads publicitaires
+          return node;
+        }
+      } catch (e) {}
       return origAppend.call(this, node);
     };
-  } catch {}
+  } catch (e) {}
 }
 
 function safeClean() {
@@ -117,7 +177,9 @@ function safeClean() {
     hideStaticAds();
     handlePlayerAds();
     maybeSleep();
-  } catch {}
+  } catch (e) {
+    // On reste silencieux pour ne pas spammer la console utilisateur
+  }
 }
 
 function hideStaticAds() {
@@ -134,18 +196,26 @@ function hideStaticAds() {
     "ytd-companion-slot-renderer",
     'ytd-engagement-panel-section-list-renderer[target-id*="engagement-panel-ads"]'
   ];
+
   let removed = 0;
   for (const sel of selectors) {
-    document.querySelectorAll(sel).forEach((el) => {
+    const nodes = document.querySelectorAll(sel);
+    if (!nodes.length) continue;
+
+    nodes.forEach((el) => {
       if (!el.dataset.pureblockHidden) {
-        el.style.display = "none";
-        el.style.visibility = "hidden";
+        el.style.setProperty("display", "none", "important");
+        el.style.setProperty("visibility", "hidden", "important");
         el.dataset.pureblockHidden = "1";
         removed++;
       }
     });
   }
-  if (removed > 0) reportBlocked(removed, removed * 10 * 1024);
+
+  if (removed > 0) {
+    // estimation ultra-simple: 10KB par bloc supprimé
+    reportBlocked(removed, removed * 10 * 1024);
+  }
 }
 
 function handlePlayerAds() {
@@ -168,24 +238,43 @@ function handlePlayerAds() {
   if (skipBtn) {
     skipBtn.click();
     lastAdTs = Date.now();
-    reportBlocked(1, Math.floor(video.duration || 5) * 50 * 1024);
+    // estimation : durée vidéo * 50KB "économisés"
+    const est = Math.floor(video.duration || 5) * 50 * 1024;
+    reportBlocked(1, est);
     return;
   }
 
+  // Si pas de bouton skip, on réduit un peu la douleur en avançant légèrement
   try {
-    const remaining = video.duration - video.currentTime;
+    const remaining = (video.duration || 0) - (video.currentTime || 0);
     if (remaining > 5 && remaining < 15) {
-      video.currentTime += 2;
+      video.currentTime = Math.min(
+        video.duration || video.currentTime + 2,
+        (video.currentTime || 0) + 2
+      );
       lastAdTs = Date.now();
       reportBlocked(1, 50 * 1024);
     }
-  } catch {}
+  } catch (e) {}
 }
 
 function maybeSleep() {
-  if (!sleeping && Date.now() - lastAdTs > SLEEP_AFTER_MS) sleep();
+  if (!sleeping && Date.now() - lastAdTs > SLEEP_AFTER_MS) {
+    sleep();
+  }
 }
 
+// Aligne avec background.js : { action: "incrementStats", blocked, bytes }
 function reportBlocked(count, bytes) {
-  api.runtime.sendMessage({ action: "incrementStats", count, bytes }, () => {});
+  if (!count && !bytes) return;
+  try {
+    api.runtime.sendMessage(
+      {
+        action: "incrementStats",
+        blocked: count || 0,
+        bytes: bytes || 0
+      },
+      () => {}
+    );
+  } catch (e) {}
 }

@@ -20,6 +20,7 @@
     "service_worker": "popup/background.js",
     "type": "module"
   },
+  "options_page": "options.html",
   "permissions": [
     "storage",
     "declarativeNetRequest",
@@ -46,14 +47,24 @@
   },
   "content_scripts": [
     {
-      "matches": ["*://*.youtube.com/*"],
-      "js": ["youtube/youtube.js", "youtube/premium1080p.js", "youtube/content.js"],
+      "matches": [
+        "*://*.youtube.com/*"
+      ],
+      "js": [
+        "youtube/youtube.js",
+        "youtube/premium1080p.js",
+        "youtube/content.js"
+      ],
       "run_at": "document_start",
       "all_frames": true
     },
     {
-      "matches": ["<all_urls>"],
-      "js": ["youtube/stealth.js"],
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "youtube/stealth.js"
+      ],
       "run_at": "document_start"
     }
   ],
@@ -63,13 +74,17 @@
         "popup/popup.html",
         "popup/popup.js",
         "popup/popup.css",
+        "options/options.html",
+        "options/options.js",
         "youtube/premium1080p.js",
         "youtube/youtube.js",
         "youtube/stealth.js",
         "youtube/content.js",
-        "youtube/rules_yt_ads.json"
+        "rules_yt_ads.json"
       ],
-      "matches": ["<all_urls>"]
+      "matches": [
+        "<all_urls>"
+      ]
     }
   ],
   "browser_specific_settings": {

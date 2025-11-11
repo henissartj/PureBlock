@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>PureBlock - Options</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{
+      min-height:100vh;
+      background:linear-gradient(135deg,#0f0f1a 0%,#1a1a2e 100%);
+      color:#e0e0ff;
+      font-family:'Inter',sans-serif;
+      display:flex;
+      justify-content:center;
+      padding:32px 16px;
+    }
+    .wrap{
+      width:100%;
+      max-width:720px;
+      background:rgba(8,8,16,0.9);
+      border-radius:18px;
+      padding:24px 22px 20px;
+      box-shadow:0 18px 40px rgba(0,0,0,0.6);
+      border:1px solid rgba(160,216,255,0.12);
+      backdrop-filter:blur(14px);
+    }
+    h1{
+      font-family:'Space Grotesk',sans-serif;
+      font-weight:600;
+      font-size:26px;
+      letter-spacing:-0.4px;
+      background:linear-gradient(90deg,#a0d8ff,#e0c3fc);
+      -webkit-background-clip:text;
+      color:transparent;
+      -webkit-text-fill-color:transparent;
+      margin-bottom:4px;
+    }
+    .subtitle{
+      font-size:12px;
+      color:#9fa0c8;
+      margin-bottom:18px;
+    }
+    .grid{
+      display:grid;
+      grid-template-columns:1.4fr 1.6fr;
+      gap:18px;
+    }
+    @media(max-width:640px){
+      .grid{
+        grid-template-columns:1fr;
+      }
+    }
+    .card{
+      background:rgba(15,15,30,0.96);
+      border-radius:14px;
+      padding:14px 12px 12px;
+      border:1px solid rgba(255,255,255,0.06);
+      box-shadow:0 8px 20px rgba(0,0,0,0.45);
+      margin-bottom:10px;
+    }
+    .card h2{
+      font-family:'Space Grotesk',sans-serif;
+      font-size:15px;
+      margin-bottom:4px;
+      color:#e6e6ff;
+    }
+    .card p{
+      font-size:10px;
+      color:#8a8bb0;
+      margin-bottom:8px;
+    }
+    .toggle-row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+      margin:4px 0;
+      font-size:11px;
+      color:#c4c5ff;
+    }
+    .toggle-row span.label{
+      font-weight:500;
+    }
+    .toggle-row small{
+      display:block;
+      font-size:9px;
+      color:#7a7ba2;
+      margin-top:1px;
+    }
+    .toggle-row input[type="checkbox"]{
+      transform:scale(1.1);
+      accent-color:#00d4ff;
+      cursor:pointer;
+    }
+    .pill-input{
+      display:flex;
+      gap:6px;
+      margin-top:6px;
+    }
+    .pill-input input{
+      flex:1;
+      padding:7px 9px;
+      border-radius:8px;
+      border:1px solid #444466;
+      background:rgba(4,4,12,0.98);
+      color:#e0e0ff;
+      font-size:10px;
+      outline:none;
+    }
+    .pill-input button{
+      padding:7px 9px;
+      border-radius:8px;
+      border:none;
+      background:linear-gradient(135deg,rgba(160,216,255,0.18),rgba(224,195,252,0.18));
+      color:#e0e0ff;
+      font-size:10px;
+      cursor:pointer;
+      transition:all .25s;
+      box-shadow:0 4px 10px rgba(0,0,0,0.35);
+    }
+    .pill-input button:hover{
+      transform:translateY(-1px);
+      box-shadow:0 6px 14px rgba(0,0,0,0.45);
+    }
+    ul.list{
+      list-style:none;
+      margin-top:6px;
+      max-height:120px;
+      overflow-y:auto;
+      font-size:9px;
+      color:#a8a9d8;
+    }
+    ul.list li{
+      padding:3px 5px;
+      border-radius:6px;
+      background:rgba(20,20,40,0.9);
+      margin-bottom:4px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:6px;
+    }
+    ul.list button{
+      border:none;
+      background:transparent;
+      color:#ff8b8b;
+      font-size:9px;
+      cursor:pointer;
+    }
+    .danger-btn{
+      margin-top:8px;
+      padding:6px 10px;
+      font-size:9px;
+      border-radius:8px;
+      border:1px solid rgba(255,111,111,0.6);
+      background:rgba(40,10,10,0.96);
+      color:#ffb3b3;
+      cursor:pointer;
+      transition:all .25s;
+    }
+    .danger-btn:hover{
+      transform:translateY(-1px);
+      box-shadow:0 4px 10px rgba(0,0,0,0.55);
+    }
+    .hint{
+      font-size:8px;
+      color:#666688;
+      margin-top:4px;
+    }
+    .footer{
+      margin-top:10px;
+      font-size:8px;
+      color:#64658a;
+      text-align:right;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>PureBlock</h1>
+    <div class="subtitle">
+      Réglages avancés. Tout reste local, léger et dédié à YouTube.
+    </div>
+
+    <div class="grid">
+      <!-- Colonne gauche -->
+      <div>
+        <div class="card">
+          <h2>Expérience YouTube</h2>
+          <p>Affinage côté UX sans casser ta promesse : simple, propre.</p>
+
+          <div class="toggle-row">
+            <div>
+              <span class="label">Mode PureFocus</span>
+              <small>Masque recommandations, shorts & distractions autour du player.</small>
+            </div>
+            <input type="checkbox" id="purefocus-toggle">
+          </div>
+
+          <div class="toggle-row">
+            <div>
+              <span class="label">Skip segments sponsor (soft)</span>
+              <small>Active juste un flag interne. Aucune donnée envoyée tant que tu ne branches rien.</small>
+            </div>
+            <input type="checkbox" id="sponsor-toggle">
+          </div>
+
+          <div class="toggle-row">
+            <div>
+              <span class="label">Badge debug léger</span>
+              <small>Overlay minimal pour t'aider à diagnostiquer les changements YouTube.</small>
+            </div>
+            <input type="checkbox" id="debug-toggle">
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Stats & sécurité</h2>
+          <p>Tout est stocké localement. Tu contrôles.</p>
+
+          <button id="reset-stats-btn" class="danger-btn">Réinitialiser les statistiques locales</button>
+          <div class="hint">
+            Ceci remet à zéro le compteur de pubs bloquées et les données économisées.
+          </div>
+        </div>
+      </div>
+
+      <!-- Colonne droite -->
+      <div>
+        <div class="card">
+          <h2>Whitelist chaînes YouTube</h2>
+          <p>Autorise l'affichage normal sur tes créateurs favoris.</p>
+
+          <div class="pill-input">
+            <input id="channel-input" type="text" placeholder="ID de chaîne ou URL YouTube..." />
+            <button id="add-channel-btn">Ajouter</button>
+          </div>
+          <ul id="channels-list" class="list"></ul>
+          <div class="hint">
+            PureBlock ignore ses règles spécifiques pour ces chaînes (si tu les exploites côté content script).
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Sites en pause</h2>
+          <p>PureBlock ne s'applique pas sur ces domaines.</p>
+          <ul id="paused-hosts-list" class="list"></ul>
+          <div class="hint">
+            Tu peux aussi gérer la pause directement depuis le popup.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      Code lisible, aucun tracking. Tu peux auditer chaque ligne.
+    </div>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>
