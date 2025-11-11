@@ -1,4 +1,3 @@
-// content.js - Version optimisée + PAUSE 100% FONCTIONNELLE
 (async () => {
   'use strict';
 
