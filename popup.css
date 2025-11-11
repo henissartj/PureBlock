@@ -33,3 +33,53 @@ body.off h1{background:linear-gradient(90deg,#555577,#777799);-webkit-background
 body.off .slogan{color:#555577;opacity:.6}
 body.off .stat span{color:#666688}
 body.off .stat p{color:#444455}
+
+.premium-badge {
+  position: absolute;
+  top: 90px;
+  right: 24px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 10px;
+  color: #fff;
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  opacity: 0.9;
+  transition: all 0.3s ease;
+}
+
+.premium-badge svg {
+  filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.3));
+}
+
+.premium-toggle {
+  margin: 12px 0 4px;
+  text-align: left;
+  font-size: 11px;
+  color: #9fa0c8;
+}
+
+.premium-toggle label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.premium-toggle input {
+  transform: scale(1.1);
+  accent-color: #00d4ff;
+}
+
+.premium-toggle span {
+  font-weight: 500;
+}
+
+body.off .premium-badge,
+body.off .premium-toggle {
+  opacity: 0.5;
+}
