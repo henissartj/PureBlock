@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "PureBlock",
-  "version": "6.2.0",
+  "version": "1.2.5",
   "description": "Browse pure, stay secure.",
   "icons": {
     "16": "icons/icon-16.png",
@@ -23,10 +23,17 @@
   "permissions": [
     "storage",
     "declarativeNetRequest",
-    "declarativeNetRequestFeedback"
+    "declarativeNetRequestFeedback",
+    "scripting",
+    "tabs"
   ],
   "host_permissions": [
-    "<all_urls>"
+    "*://*.youtube.com/*",
+    "*://*.googlevideo.com/*",
+    "*://*.googlesyndication.com/*",
+    "*://*.doubleclick.net/*",
+    "*://*.gstatic.com/*",
+    "*://*.googleads.g.doubleclick.net/*"
   ],
   "declarative_net_request": {
     "rule_resources": [
@@ -40,13 +47,34 @@
   "content_scripts": [
     {
       "matches": ["*://*.youtube.com/*"],
-      "js": ["youtube.js"],
+      "js": ["youtube.js", "premium1080p.js", "content.js"],
+      "run_at": "document_start",
+      "all_frames": true
+    },
+    {
+      "matches": ["<all_urls>"],
+      "js": ["stealth.js"],
       "run_at": "document_start"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "popup.html",
+        "popup.js",
+        "popup.css",
+        "premium1080p.js",
+        "youtube.js",
+        "stealth.js",
+        "content.js",
+        "rules_yt_ads.json"
+      ],
+      "matches": ["<all_urls>"]
     }
   ],
   "browser_specific_settings": {
     "gecko": {
-      "id": "epheverisme.art",
+      "id": "www.epheverisme.art",
       "strict_min_version": "115.0"
     }
   }
