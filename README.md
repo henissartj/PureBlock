@@ -1,12 +1,12 @@
 <div align="center">
 
 # 🎥 PureBlock
-**L'extension open-source légère qui libère YouTube des pubs**
+**L'extension open-source légère qui libère de l'autisme**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge&logo=opensourceinitiative)](https://github.com/henissartj/PureBlock/blob/main/LICENSE)
 [![Last Commit](https://img.shields.io/github/last-commit/henissartj/PureBlock?style=for-the-badge&color=success)](https://github.com/henissartj/PureBlock/commits/main)
 
-> **Naviguez sans interruption. Regardez sans compromis.**
+> **Browse pure, stay secure.**
 
 </div>
 
