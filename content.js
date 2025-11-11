@@ -1,6 +1,13 @@
-// content.js - Version optimisée (cosmétique + skip ads + boost 1080p)
-(() => {
+// content.js - Version optimisée + PAUSE 100% FONCTIONNELLE
+(async () => {
   'use strict';
+
+  let isPaused = false;
+  let observer = null;
+  let cleanupInterval = null;
+  let cleanPending = false;
+
+  const domain = location.hostname.replace(/^www\./, '');
 
   const cosmeticFilters = [
     { selector: '.ytp-ad-overlay-container, .ytp-ad-player-overlay', style: 'display: none !important; height: 0 !important;' },
@@ -10,9 +17,8 @@
     { selector: 'yt-mealbar-promo-renderer, ytd-banner-promo-renderer', style: 'display: none !important; height: 0 !important;' }
   ];
 
-  let cleanPending = false;
-
   function applyCosmetic() {
+    if (isPaused) return;
     for (const f of cosmeticFilters) {
       const els = document.querySelectorAll(f.selector);
       for (const el of els) {
@@ -26,14 +32,13 @@
   }
 
   function handleAds() {
+    if (isPaused) return;
     const video = document.querySelector('video.html5-main-video');
     if (!video) return;
 
-    // Skip bouton
     const skipBtn = document.querySelector('.ytp-ad-skip-button, .ytp-ad-skip-button-modern');
     if (skipBtn) skipBtn.click();
 
-    // Si pub en cours
     const isAd = document.body.querySelector('.ad-showing, .ad-interrupting');
     if (isAd) {
       video.playbackRate = 16;
@@ -45,6 +50,7 @@
   }
 
   function forcePremiumQuality() {
+    if (isPaused) return;
     const player = document.getElementById('movie_player');
     if (!player || typeof player.getAvailableQualityLevels !== 'function') return;
 
@@ -59,8 +65,7 @@
           return;
         }
       }
-    } catch (e) {
-      // Fallback clic menu
+    } catch {
       const settings = document.querySelector('.ytp-settings-button');
       if (!settings) return;
       settings.click();
@@ -79,7 +84,7 @@
   }
 
   function throttledClean() {
-    if (cleanPending) return;
+    if (isPaused || cleanPending) return;
     cleanPending = true;
     requestIdleCallback(() => {
       try {
@@ -92,18 +97,55 @@
     }, { timeout: 1000 });
   }
 
-  const observer = new MutationObserver(throttledClean);
-  observer.observe(document.documentElement, { childList: true, subtree: true });
+  async function startBlocking() {
+    const { pausedSites = {} } = await chrome.storage.local.get('pausedSites');
+    isPaused = !!pausedSites[domain];
 
-  // Initialisation immédiate
-  applyCosmetic();
-  handleAds();
-  forcePremiumQuality();
+    if (isPaused) {
+      resetInjectedStyles();
+      return;
+    }
 
-  // Rafraîchissement périodique pour contenu dynamique
-  setInterval(forcePremiumQuality, 3000);
+    if (observer) observer.disconnect();
+    if (cleanupInterval) clearInterval(cleanupInterval);
+
+    observer = new MutationObserver(throttledClean);
+    observer.observe(document.documentElement, { childList: true, subtree: true });
+
+    applyCosmetic();
+    handleAds();
+    forcePremiumQuality();
+
+    cleanupInterval = setInterval(() => {
+      applyCosmetic();
+      handleAds();
+      forcePremiumQuality();
+    }, 1000);
+  }
+
+  function resetInjectedStyles() {
+    document.querySelectorAll('[data-pb-hidden]').forEach((el) => {
+      el.removeAttribute('data-pb-hidden');
+      el.style.cssText = el.style.cssText
+        .replace(/!important/g, '')
+        .replace(/display:\s*none[^;]*;?/g, '')
+        .replace(/height:\s*0[^;]*;?/g, '');
+    });
+  }
 
   chrome.runtime.onMessage.addListener((msg) => {
-    if (msg.action === 'toggle') throttledClean();
+    if (msg.action !== 'sitePaused' || msg.domain !== domain) return;
+
+    isPaused = msg.paused;
+
+    if (isPaused) {
+      if (observer) observer.disconnect();
+      if (cleanupInterval) clearInterval(cleanupInterval);
+      resetInjectedStyles();
+    } else {
+      startBlocking();
+    }
   });
+
+  startBlocking();
 })();
