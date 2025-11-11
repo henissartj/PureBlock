@@ -11,7 +11,6 @@
 <div align="center">
   <img src="images/top.png" alt="Interface PureBlock" width="600"/>
   <br><br>
-  <i>Design minimaliste • Français • Intuitif</i>
 </div>
 
 ---
