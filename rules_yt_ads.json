@@ -4,7 +4,7 @@
     "priority": 1,
     "action": { "type": "block" },
     "condition": {
-      "urlFilter": "*://*.googleads.g.doubleclick.net/*",
+      "urlFilter": "*://*.doubleclick.net/*",
       "resourceTypes": ["script", "image", "media", "xmlhttprequest", "sub_frame"]
     }
   },
@@ -13,7 +13,7 @@
     "priority": 1,
     "action": { "type": "block" },
     "condition": {
-      "urlFilter": "*://*.doubleclick.net/pagead/*",
+      "urlFilter": "*://*.googleads.g.doubleclick.net/*",
       "resourceTypes": ["script", "image", "media", "xmlhttprequest"]
     }
   },
@@ -22,7 +22,7 @@
     "priority": 1,
     "action": { "type": "block" },
     "condition": {
-      "urlFilter": "*pagead/lvz*",
+      "urlFilter": "*pagead/*",
       "resourceTypes": ["script", "xmlhttprequest", "image", "media"]
     }
   },
@@ -31,7 +31,7 @@
     "priority": 1,
     "action": { "type": "block" },
     "condition": {
-      "urlFilter": "*pagead/js/adsbygoogle.js*",
+      "urlFilter": "*adsbygoogle.js*",
       "resourceTypes": ["script"]
     }
   },
@@ -59,7 +59,7 @@
     "action": { "type": "block" },
     "condition": {
       "urlFilter": "*://*.youtube.com/youtubei/v1/player/ad*",
-      "resourceTypes": ["xmlhttprequest"]
+      "resourceTypes": ["xmlhttprequest", "media"]
     }
   },
   {
@@ -67,8 +67,8 @@
     "priority": 1,
     "action": { "type": "block" },
     "condition": {
-      "urlFilter": "*://*.youtube.com/pagead/*",
-      "resourceTypes": ["xmlhttprequest", "media", "script"]
+      "urlFilter": "*://*.youtube.com/api/ads/*",
+      "resourceTypes": ["xmlhttprequest", "script"]
     }
   },
   {
@@ -76,8 +76,26 @@
     "priority": 1,
     "action": { "type": "block" },
     "condition": {
-      "urlFilter": "*://*.youtube.com/api/ads/*",
-      "resourceTypes": ["xmlhttprequest", "script"]
+      "urlFilter": "*://*.youtube.com/youtubei/v1/log_event*",
+      "resourceTypes": ["xmlhttprequest"]
+    }
+  },
+  {
+    "id": 10,
+    "priority": 1,
+    "action": { "type": "block" },
+    "condition": {
+      "urlFilter": "*://*.youtube-nocookie.com/*ad*",
+      "resourceTypes": ["xmlhttprequest", "script", "media"]
+    }
+  },
+  {
+    "id": 11,
+    "priority": 1,
+    "action": { "type": "block" },
+    "condition": {
+      "urlFilter": "*://*.googlevideo.com/videoplayback*ctier*",
+      "resourceTypes": ["media"]
     }
   }
 ]
