@@ -51,9 +51,9 @@
         "*://*.youtube.com/*"
       ],
       "js": [
-        "youtube/youtube.js",
-        "youtube/premium1080p.js",
-        "youtube/content.js"
+        "youtube.js",
+        "premium1080p.js",
+        "content.js"
       ],
       "run_at": "document_start",
       "all_frames": true
@@ -63,7 +63,7 @@
         "<all_urls>"
       ],
       "js": [
-        "youtube/stealth.js"
+        "stealth.js"
       ],
       "run_at": "document_start"
     }
@@ -71,15 +71,15 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "popup/popup.html",
-        "popup/popup.js",
-        "popup/popup.css",
-        "options/options.html",
-        "options/options.js",
-        "youtube/premium1080p.js",
-        "youtube/youtube.js",
-        "youtube/stealth.js",
-        "youtube/content.js",
+        "popup.html",
+        "popup.js",
+        "popup.css",
+        "options.html",
+        "options.js",
+        "premium1080p.js",
+        "youtube.js",
+        "stealth.js",
+        "content.js",
         "rules_yt_ads.json"
       ],
       "matches": [
