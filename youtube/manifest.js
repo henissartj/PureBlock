@@ -10,14 +10,14 @@
     "128": "icons/icon-128.png"
   },
   "action": {
-    "default_popup": "popup.html",
+    "default_popup": "popup/popup.html",
     "default_icon": {
       "16": "icons/icon-16.png",
       "32": "icons/icon-32.png"
     }
   },
   "background": {
-    "service_worker": "background.js",
+    "service_worker": "popup/background.js",
     "type": "module"
   },
   "permissions": [
@@ -47,27 +47,27 @@
   "content_scripts": [
     {
       "matches": ["*://*.youtube.com/*"],
-      "js": ["youtube.js", "premium1080p.js", "content.js"],
+      "js": ["youtube/youtube.js", "youtube/premium1080p.js", "youtube/content.js"],
       "run_at": "document_start",
       "all_frames": true
     },
     {
       "matches": ["<all_urls>"],
-      "js": ["stealth.js"],
+      "js": ["youtube/stealth.js"],
       "run_at": "document_start"
     }
   ],
   "web_accessible_resources": [
     {
       "resources": [
-        "popup.html",
-        "popup.js",
-        "popup.css",
-        "premium1080p.js",
-        "youtube.js",
-        "stealth.js",
-        "content.js",
-        "rules_yt_ads.json"
+        "popup/popup.html",
+        "popup/popup.js",
+        "popup/popup.css",
+        "youtube/premium1080p.js",
+        "youtube/youtube.js",
+        "youtube/stealth.js",
+        "youtube/content.js",
+        "youtube/rules_yt_ads.json"
       ],
       "matches": ["<all_urls>"]
     }
