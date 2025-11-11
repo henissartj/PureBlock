@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🎥 PureBlock
+# PureBlock
 **L'extension open-source légère qui libère de l'autisme**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge&logo=opensourceinitiative)](https://github.com/henissartj/PureBlock/blob/main/LICENSE)
