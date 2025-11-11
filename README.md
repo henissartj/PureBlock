@@ -1,8 +1,6 @@
 # PureBlock
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/henissartj/PureBlock/blob/main/LICENSE)  
-[![GitHub stars](https://img.shields.io/github/stars/henissartj/PureBlock?style=social)](https://github.com/henissartj/PureBlock/stargazers)  
-[![GitHub issues](https://img.shields.io/github/issues/henissartj/PureBlock)](https://github.com/henissartj/PureBlock/issues)  
 [![Code Size](https://img.shields.io/github/languages/code-size/henissartj/PureBlock)](https://github.com/henissartj/PureBlock)  
 [![Last Commit](https://img.shields.io/github/last-commit/henissartj/PureBlock)](https://github.com/henissartj/PureBlock/commits/main)
 
