@@ -10,6 +10,8 @@
 
 </div>
 
+<img src="images/extension/popup-interface.png" alt="Interface PureBlock" width="600"/>
+
 ---
 
 ## 🌟 **Description**
