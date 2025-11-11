@@ -32,6 +32,7 @@ Avec un contrôle fin et intelligent, elle vous redonne la main :
 ```
 
 2. Ouvrez votre navigateur :
+
    • Chrome : chrome://extensions → "Mode développeur" → "Charger l'extension non empaquetée"
    
    • Firefox : about:debugging#/runtime/this-firefox → "Charger un module complémentaire temporaire"
