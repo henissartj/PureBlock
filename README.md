@@ -9,7 +9,7 @@
 </div>
 
 <div align="center">
-  <img src="images/top.png" alt="Interface PureBlock" width="600"/>
+  <img src="icons/images/top.png" alt="Interface PureBlock" width="600"/>
   <br><br>
 </div>
 
