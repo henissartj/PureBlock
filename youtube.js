@@ -130,7 +130,9 @@ function initAdResponseSanitizer() {
         // Hard-block côté page pour endpoints publicitaires (complément DNR)
         try {
           const u = String(url || '');
-          if (/pagead|doubleclick|googlesyndication|googleads\.g\.doubleclick\.net/i.test(u)) {
+          const isAdDomain = /pagead|doubleclick|googlesyndication|googleads\.g\.doubleclick\.net/i.test(u);
+          const isYTAdEndpoint = /(\/pcs\/activeview|\/ptracking|\/api\/stats\/ads|\/api\/stats\/playback|\/pagead\/adview|\/youtubei\/v1\/log_event|\/pagead\/id|\/pagead\/aclk)/i.test(u);
+          if (isAdDomain || isYTAdEndpoint) {
             // Répond un 204 vide pour éviter erreurs côté page
             return new Response('', { status: 204, statusText: 'No Content', headers: new Headers({ 'content-type': 'text/plain' }) });
           }
@@ -249,7 +251,7 @@ function initBeaconKiller(){
   try {
     const orig = navigator.sendBeacon;
     if (typeof orig !== 'function' || orig.__pbWrapped) return;
-    const blocked = /(pagead|doubleclick|googlesyndication|googleads)/i;
+    const blocked = /(pagead|doubleclick|googlesyndication|googleads|\/pcs\/activeview|\/ptracking|\/api\/stats\/ads|\/api\/stats\/playback|\/pagead\/adview|\/youtubei\/v1\/log_event|\/pagead\/id|\/pagead\/aclk)/i;
     const wrapped = function(url, data){
       try {
         const u = typeof url === 'string' ? url : (url && url.toString()) || '';
@@ -306,9 +308,37 @@ function initXHRAdSanitizer() {
       const xhr = new OrigXHR();
       let url = '';
       const origOpen = xhr.open;
+      const origSend = xhr.send;
+      function isAdURL(u){
+        try {
+          const s = String(u || '');
+          return /pagead|doubleclick|googlesyndication|googleads\.g\.doubleclick\.net/i.test(s)
+            || /(\/pcs\/activeview|\/ptracking|\/api\/stats\/ads|\/api\/stats\/playback|\/pagead\/adview|\/youtubei\/v1\/log_event|\/pagead\/id|\/pagead\/aclk)/i.test(s);
+        } catch (_) { return false; }
+      }
       xhr.open = function(method, u, async, user, pass) {
         url = u || '';
         return origOpen.apply(xhr, arguments);
+      };
+      xhr.send = function(body){
+        try {
+          if (enabled && isAdURL(url)) {
+            // Simule une réponse 204 sans effectuer la requête
+            try {
+              Object.defineProperty(xhr, 'status', { configurable: true, get(){ return 204; } });
+              Object.defineProperty(xhr, 'statusText', { configurable: true, get(){ return 'No Content'; } });
+              Object.defineProperty(xhr, 'responseText', { configurable: true, get(){ return ''; } });
+              Object.defineProperty(xhr, 'response', { configurable: true, get(){ return ''; } });
+              Object.defineProperty(xhr, 'readyState', { configurable: true, get(){ return 4; } });
+            } catch (_) {}
+            setTimeout(() => {
+              try { xhr.dispatchEvent(new Event('readystatechange')); } catch (_) {}
+              try { xhr.dispatchEvent(new Event('load')); } catch (_) {}
+            }, 0);
+            return;
+          }
+        } catch (_) {}
+        return origSend.apply(xhr, arguments);
       };
       function trySanitize() {
         try {

@@ -7,10 +7,24 @@
 ||google.com/pagead^$all
 ||youtube.com/pagead/^$all
 ||youtube.com/api/stats/ads^$xhr
+||youtube.com/api/stats/playback^$xhr
+||youtube.com/api/stats/qoe^$xhr
 ||youtube.com/youtubei/v1/log_event^$xhr
 ||googlevideo.com/videoplayback?adformat=^$media
-||googlevideo.com/videoplayback?oad=^$media
-||googlevideo.com/videoplayback?ctier=^$media
+
+! YouTube native ad/tracking endpoints
+||youtube.com/pcs/activeview^$ping,image,xhr
+||youtube.com/ptracking^$ping,xhr
+||youtube.com/pagead/adview^$xhr,ping
+
+! Google/DoubleClick ad pixels and clicks
+||ad.doubleclick.net/ddm/trackimp^$image,ping
+||pagead2.googlesyndication.com/activeview_ext^$image,ping
+||ade.googlesyndication.com/ddm/activity_ext^$image,ping
+||googleads.g.doubleclick.net/pagead/id^$all
+||google.com/pagead/aclk^$all
+||tpc.googlesyndication.com/sodar/^$script
+||google.com/js/th/^$script
 
 ! Cosmetic filters (domain##selector)
 youtube.com##.ytp-ad-module
