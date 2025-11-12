@@ -43,6 +43,11 @@
         "id": "yt-static-rules",
         "enabled": true,
         "path": "rules_yt_ads.json"
+      },
+      {
+        "id": "global-ads-rules",
+        "enabled": true,
+        "path": "rules_global_ads.json"
       }
     ]
   },

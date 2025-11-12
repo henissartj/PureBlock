@@ -554,6 +554,11 @@ function handlePlayerAds() {
     document.querySelector(".ytp-ad-module");
 
   if (!isAd) {
+    // Retirer overlay skip si présent
+    const overlay = player.querySelector('.pureblock-skip-overlay');
+    if (overlay) {
+      overlay.remove();
+    }
     // Revert any ad-time tweaks for fluidity
     try {
       if (boostedPlayback && video.playbackRate !== 1) {
@@ -590,6 +595,41 @@ function handlePlayerAds() {
       video.muted = true;
       boostedPlayback = true;
     }
+  } catch (e) {}
+
+  // Ajouter un bouton overlay "Skip pub" pour donner le contrôle utilisateur
+  ensureAdSkipOverlay(player, video);
+}
+
+function ensureAdSkipOverlay(player, video) {
+  try {
+    if (!player || !video) return;
+    if (player.querySelector('.pureblock-skip-overlay')) return;
+    const wrap = document.createElement('div');
+    wrap.className = 'pureblock-skip-overlay';
+    wrap.style.cssText = 'position:absolute;top:8px;right:8px;z-index:9999;';
+    const btn = document.createElement('button');
+    btn.textContent = 'Skip pub';
+    btn.setAttribute('aria-label', 'Skip pub (PureBlock)');
+    btn.style.cssText = 'padding:6px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.25);color:#fff;background:rgba(20,20,32,0.6);backdrop-filter:saturate(120%) blur(3px);font-size:12px;cursor:pointer;';
+    btn.addEventListener('click', () => {
+      try {
+        const skipBtn = document.querySelector('.ytp-ad-skip-button, .ytp-ad-skip-button-modern');
+        if (skipBtn) {
+          skipBtn.click();
+        } else {
+          // Fallback: tenter d'aller en fin d'ad si autorisé
+          const dur = video.duration || 0;
+          if (dur > 0) {
+            video.currentTime = Math.max(0, dur - 0.05);
+            video.play?.();
+          }
+        }
+      } catch (e) {}
+    });
+    wrap.appendChild(btn);
+    player.style.position = 'relative';
+    player.appendChild(wrap);
   } catch (e) {}
 }
 

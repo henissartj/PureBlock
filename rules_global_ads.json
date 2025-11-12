@@ -1,0 +1,12 @@
+[
+  {"id":101,"priority":1,"action":{"type":"block"},"condition":{"urlFilter":"*://*.googletagservices.com/*","resourceTypes":["script","xmlhttprequest","image","media"]}},
+  {"id":102,"priority":1,"action":{"type":"block"},"condition":{"urlFilter":"*://*.adservice.google.com/*","resourceTypes":["script","xmlhttprequest","image","media"]}},
+  {"id":103,"priority":1,"action":{"type":"block"},"condition":{"urlFilter":"*://*.amazon-adsystem.com/*","resourceTypes":["script","xmlhttprequest","image","media"]}},
+  {"id":104,"priority":1,"action":{"type":"block"},"condition":{"urlFilter":"*://*.adsafeprotected.com/*","resourceTypes":["script","xmlhttprequest","image","media"]}},
+  {"id":105,"priority":1,"action":{"type":"block"},"condition":{"urlFilter":"*://*.criteo.com/*","resourceTypes":["script","xmlhttprequest","image","media"]}},
+  {"id":106,"priority":1,"action":{"type":"block"},"condition":{"urlFilter":"*://*.rubiconproject.com/*","resourceTypes":["script","xmlhttprequest","image","media"]}},
+  {"id":107,"priority":1,"action":{"type":"block"},"condition":{"urlFilter":"*://*.pubmatic.com/*","resourceTypes":["script","xmlhttprequest","image","media"]}},
+  {"id":108,"priority":1,"action":{"type":"block"},"condition":{"urlFilter":"*://*.taboola.com/*","resourceTypes":["script","xmlhttprequest","image","media"]}},
+  {"id":109,"priority":1,"action":{"type":"block"},"condition":{"urlFilter":"*://*.outbrain.com/*","resourceTypes":["script","xmlhttprequest","image","media"]}},
+  {"id":110,"priority":1,"action":{"type":"block"},"condition":{"urlFilter":"*://*.adroll.com/*","resourceTypes":["script","xmlhttprequest","image","media"]}}
+]
