@@ -12,6 +12,105 @@ let boostedPlayback = false;
 let bitrateBoost = false;
 let preferHDR = false;
 let codecPref = 'auto';
+// Réseau: paramètres par défaut (modulables via storage si besoin)
+let gvMaxConcurrent = 1;         // Objectif A: limiter concurrence (queue simple)
+let gvThrottleMbps = 5;          // Objectif A/B: pacing ~5 Mbps par défaut
+let prebufferSeconds = 20;       // Objectif C: ne pas précharger trop loin
+let gvMbps4K = 12;               // Débit différent si 4K détectée
+let gvCurrentIs4K = false;       // Mis à jour par le gardien de qualité
+
+// État de la queue googlevideo
+let gvRunning = 0;
+const gvQueue = [];
+function gvSchedule() {
+  while (gvRunning < gvMaxConcurrent && gvQueue.length) {
+    const job = gvQueue.shift();
+    gvRunning++;
+    job.start();
+  }
+}
+function gvEnqueue(run) {
+  return new Promise((resolve, reject) => {
+    const job = {
+      start: async () => {
+        try {
+          const res = await run(() => { gvRunning--; gvSchedule(); });
+          resolve(res);
+        } catch (e) {
+          reject(e);
+          gvRunning--; gvSchedule();
+        }
+      }
+    };
+    gvQueue.push(job);
+    gvSchedule();
+  });
+}
+function sleepMs(ms){ return new Promise(r=>setTimeout(r, ms)); }
+function getMainVideo(){ return document.querySelector('video.html5-main-video'); }
+async function waitBufferAllowance() {
+  // Attendre tant que le buffer dépasse prebufferSeconds
+  try {
+    const v = getMainVideo();
+    if (!v || !v.buffered || v.buffered.length === 0) return; // rien à attendre si pas de buffer
+    let safety = 0;
+    while (safety < 300) { // max ~30s d'attente (300 * 100ms)
+      const ct = v.currentTime || 0;
+      let end = ct;
+      for (let i=0;i<v.buffered.length;i++) {
+        const s = v.buffered.start(i);
+        const e = v.buffered.end(i);
+        if (ct >= s && ct <= e) { end = e; break; }
+        if (e > end) end = e; // fallback
+      }
+      const ahead = Math.max(0, end - ct);
+      if (ahead <= prebufferSeconds) break;
+      await sleepMs(100);
+      safety++;
+    }
+  } catch (_) {}
+}
+function throttleStream(body, mbps, onDone){
+  try {
+    if (!body || typeof body.getReader !== 'function') return body;
+    const reader = body.getReader();
+    const bytesPerSec = Math.max(1, Math.floor(mbps * 125000)); // 1 Mbps = 125kB/s
+    return new ReadableStream({
+      async start(controller) {
+        try {
+          while (true) {
+            const {done, value} = await reader.read();
+            if (done) { controller.close(); onDone && onDone(); break; }
+            const chunk = value;
+            const waitMs = Math.ceil((chunk.byteLength / bytesPerSec) * 1000);
+            if (waitMs > 0) await sleepMs(waitMs);
+            controller.enqueue(chunk);
+          }
+        } catch (e) {
+          try { controller.error(e); } catch(_) {}
+          onDone && onDone();
+        }
+      }
+    });
+  } catch (_) { return body; }
+}
+
+function isVideoResponse(url, res){
+  try {
+    const ct = res?.headers?.get?.('content-type') || '';
+    if (/video\//i.test(ct)) return true;
+    if (typeof url === 'string' && url.includes('mime=video/')) return true;
+  } catch (_) {}
+  return false;
+}
+function isAudioResponse(url, res){
+  try {
+    const ct = res?.headers?.get?.('content-type') || '';
+    if (/audio\//i.test(ct)) return true;
+    if (typeof url === 'string' && url.includes('mime=audio/')) return true;
+  } catch (_) {}
+  return false;
+}
 
 // Anti‑pub: assainir les réponses player et la variable ytInitialPlayerResponse
 initAdResponseSanitizer();
@@ -24,6 +123,32 @@ function initAdResponseSanitizer() {
     if (typeof origFetch === 'function' && !origFetch.__pbWrapped) {
       const wrapped = async function(input, init) {
         const url = (typeof input === 'string') ? input : (input && input.url) || '';
+        // Objectif A/C: limiter bursts sur googlevideo et réduire prébuffer
+        const isGV = typeof url === 'string' && url.includes('googlevideo.com/videoplayback');
+        if (isGV) {
+          // Queue + pacing vidéo seulement; l'audio bypass pour démarrage rapide
+          return gvEnqueue(async (release) => {
+            await waitBufferAllowance();
+            const res = await origFetch(input, init);
+            try {
+              const isVideo = isVideoResponse(url, res);
+              const isAudio = !isVideo && isAudioResponse(url, res);
+              if (!isVideo) {
+                // Audio ou autre: pas de throttle, libérer la queue immédiatement
+                release();
+                return res;
+              }
+              const headers = new Headers();
+              res.headers && res.headers.forEach((v,k)=>{ headers.set(k,v); });
+              const targetMbps = gvCurrentIs4K ? gvMbps4K : gvThrottleMbps;
+              const pacedBody = throttleStream(res.body, targetMbps, release);
+              return new Response(pacedBody, { status: res.status, statusText: res.statusText, headers });
+            } catch (_) {
+              release();
+              return res; // fallback safe
+            }
+          });
+        }
         const res = await origFetch(input, init);
         try {
           if (url.includes('/youtubei/v1/player')) {
@@ -823,6 +948,8 @@ function reportBlocked(count, bytes) {
       if (bitrateBoost) {
         setupQualityKeeper();
       }
+      // Précharge minimal
+      try { const v = getMainVideo(); if (v) v.preload = 'metadata'; } catch(_){ }
     });
 
     // Observer les changements de storage
@@ -867,6 +994,8 @@ function setupQualityKeeper(){
     const player = document.getElementById('movie_player');
     if (!player || typeof player.getAvailableQualityLevels !== 'function') return;
     if (!bitrateBoost) return;
+    // Préload metadata côté élément vidéo
+    try { const v = getMainVideo(); if (v) v.preload = 'metadata'; } catch(_){ }
 
     // Patch setPlaybackQuality pour éviter retours auto involontaires
     if (!player.__pbQualityPatched && typeof player.setPlaybackQuality === 'function') {
@@ -879,6 +1008,7 @@ function setupQualityKeeper(){
             if (q === 'auto' || (levels.includes(q) && levels.indexOf(q) < levels.indexOf(best))) {
               q = best;
             }
+            try { gvCurrentIs4K = /hd4320|hd2880|hd2160/.test(q); } catch(_){ }
           }
         } catch {}
         return origSPQ(q);
@@ -891,6 +1021,7 @@ function setupQualityKeeper(){
         const levels = player.getAvailableQualityLevels?.() || [];
         const best = chooseBestQuality(levels);
         if (best) {
+          try { gvCurrentIs4K = /hd4320|hd2880|hd2160/.test(best); } catch(_){ }
           player.setPlaybackQualityRange?.(best);
           player.setPlaybackQuality?.(best);
         }
