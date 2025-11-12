@@ -104,7 +104,9 @@ function init() {
       'saved',
       'targetQuality',
       'stealthStrong',
-      'premium1080'
+      'premium1080',
+      'bitrateBoost',
+      'preferHDR'
     ],
     (data) => {
       document.getElementById('purefocus-toggle').checked =
@@ -120,6 +122,16 @@ function init() {
 
       if (stealthToggleEl) {
         stealthToggleEl.checked = data.stealthStrong === true;
+      }
+
+      const bitrateBoostEl = document.getElementById('bitrate-boost-toggle');
+      if (bitrateBoostEl) {
+        bitrateBoostEl.checked = data.bitrateBoost === true;
+      }
+
+      const hdrToggleEl = document.getElementById('hdr-toggle');
+      if (hdrToggleEl) {
+        hdrToggleEl.checked = data.preferHDR === true;
       }
 
       allowedChannels = Array.isArray(data.allowedChannels)
@@ -162,6 +174,16 @@ function init() {
       });
     });
   }
+
+  const bitrateBoostEl = document.getElementById('bitrate-boost-toggle');
+  bitrateBoostEl?.addEventListener('change', (e) => {
+    api.storage.local.set({ bitrateBoost: e.target.checked });
+  });
+
+  const hdrToggleEl = document.getElementById('hdr-toggle');
+  hdrToggleEl?.addEventListener('change', (e) => {
+    api.storage.local.set({ preferHDR: e.target.checked });
+  });
 
   // Add channel
   document.getElementById('add-channel-btn').addEventListener('click', () => {

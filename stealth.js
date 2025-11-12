@@ -401,45 +401,68 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     } catch {}
   })();
 
-  // Guardian de bitrate générique (simple heuristique JWPlayer/Plyr)
+  // Guardian de bitrate générique (JWPlayer/Plyr) avec préférences stockées
   (function initBitrateGuardian(){
     try {
-      function bumpJW(){
-        try {
-          if (typeof window.jwplayer === 'function') {
-            const players = document.querySelectorAll('[id^="jwplayer"]');
-            players.forEach(el => {
+      const api = typeof browser !== 'undefined' ? browser : chrome;
+      (async () => {
+        let conf = {};
+        try { conf = await api.storage?.local?.get?.(['bitrateBoost','preferHDR']) || {}; } catch {}
+        const enable = conf.bitrateBoost === true;
+        const preferHDR = conf.preferHDR === true;
+        if (!enable) return;
+
+        function bumpJW(){
+          try {
+            if (typeof window.jwplayer === 'function') {
+              const players = document.querySelectorAll('[id^="jwplayer"]');
+              players.forEach(el => {
+                try {
+                  const p = window.jwplayer(el.id);
+                  const q = p.getQualityLevels?.() || [];
+                  let idx = q.length ? q.length - 1 : -1;
+                  if (preferHDR && q.length) {
+                    const hdrIdx = q.findIndex(l => /hdr|hlg|pq|10[- ]?bit/i.test((l?.label||'') + ' ' + (l?.name||'')));
+                    if (hdrIdx >= 0) idx = hdrIdx;
+                  }
+                  if (idx >= 0) p.setCurrentQuality?.(idx);
+                } catch {}
+              });
+            }
+          } catch {}
+        }
+
+        function bumpPlyr(){
+          try {
+            const nodes = document.querySelectorAll('.plyr');
+            nodes.forEach(n => {
               try {
-                const p = window.jwplayer(el.id);
-                const q = p.getQualityLevels?.() || [];
-                const idx = q.length ? q.length - 1 : -1;
-                if (idx >= 0) p.setCurrentQuality?.(idx);
-              } catch {}
-            });
-          }
-        } catch {}
-      }
-      function bumpPlyr(){
-        try {
-          const nodes = document.querySelectorAll('.plyr');
-          nodes.forEach(n => {
-            try {
-              const inst = n.plyr || (window.Plyr && window.Plyr.setup && window.Plyr.setup(n));
-              if (inst && inst.supported && inst.config && inst.config.quality) {
-                if (inst.elements?.quality?.menu) {
-                  // tente de choisir la plus haute valeur
-                  const opts = Object.keys(inst.config.quality.options || {}).map(Number).sort((a,b)=>b-a);
-                  const top = opts[0];
+                const inst = n.plyr || (window.Plyr && window.Plyr.setup && window.Plyr.setup(n));
+                if (inst && inst.supported && inst.config && inst.config.quality) {
+                  // qualité max par défaut
+                  let top = null;
+                  const optsRaw = inst.config.quality.options || {};
+                  const opts = Object.keys(optsRaw).map(Number).filter(v=>!Number.isNaN(v)).sort((a,b)=>b-a);
+                  top = opts[0] || null;
+
+                  if (preferHDR && inst.elements?.quality?.menu) {
+                    // essaie de cliquer une entrée HDR si existante
+                    const items = inst.elements.quality.menu.querySelectorAll('button, [role="menuitem"]');
+                    const hdrItem = Array.from(items).find(it => /hdr|hlg|pq|10[- ]?bit/i.test(it.textContent||''));
+                    if (hdrItem) hdrItem.click();
+                  }
+
                   if (top) inst.quality = top;
                 }
-              }
-            } catch {}
-          });
-        } catch {}
-      }
-      const tick = () => { bumpJW(); bumpPlyr(); };
-      tick();
-      setInterval(tick, 2000);
+              } catch {}
+            });
+          } catch {}
+        }
+
+        const tick = () => { bumpJW(); bumpPlyr(); };
+        tick();
+        setInterval(tick, 2000);
+      })();
     } catch {}
   })();
 }
