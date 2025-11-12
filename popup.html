@@ -49,36 +49,42 @@
     .toggle-container{
       display:flex;
       justify-content:center;
-      margin:8px 0 6px;
+      margin:16px 0 12px;
     }
     #checkbox{display:none}
     .switch{
       position:relative;
-      width:56px;
-      height:56px;
+      width:70px;
+      height:70px;
       background-color:rgb(99,99,99);
       border-radius:50%;
+      z-index:1;
       cursor:pointer;
       display:flex;
       align-items:center;
       justify-content:center;
       border:2px solid rgb(126,126,126);
-      box-shadow:0 0 2px rgb(2,2,2) inset;
-      transition:all .4s cubic-bezier(.25,.8,.25,1);
+      box-shadow:0px 0px 3px rgb(2,2,2) inset;
+      transition: box-shadow 240ms ease, background-color 240ms ease, border-color 240ms ease, transform 220ms ease;
+      will-change: transform, box-shadow, background-color, border-color;
     }
-    .switch svg{width:1.2em;transition:all .3s}
-    .switch svg path{fill:rgb(48,48,48);transition:fill .3s}
+    .switch svg{width:1.2em}
+    .switch svg path{fill:rgb(48,48,48)}
+    .switch:hover{ transform: translateY(-1px); }
     #checkbox:checked + .switch{
-      box-shadow:0 0 1px rgb(151,243,255) inset,
-                 0 0 6px rgba(151,243,255,0.5),
-                 0 0 12px rgba(151,243,255,0.35);
-      border:2px solid #e6f9ff;
+      box-shadow:0px 0px 1px rgb(151,243,255) inset,
+                 0px 0px 2px rgb(151,243,255) inset,
+                 0px 0px 10px rgb(151,243,255) inset,
+                 0px 0px 40px rgb(151,243,255),
+                 0px 0px 100px rgb(151,243,255),
+                 0px 0px 5px rgb(151,243,255);
+      border:2px solid rgb(255,255,255);
       background-color:rgb(146,180,184);
+      transform: scale(1.03);
     }
-    #checkbox:checked + .switch svg{
-      filter:drop-shadow(0 0 5px rgb(151,243,255))
-    }
-    #checkbox:checked + .switch svg path{fill:#fff}
+    .switch:active{ transform: scale(0.99); }
+    #checkbox:checked + .switch svg{filter:drop-shadow(0px 0px 5px rgb(151,243,255))}
+    #checkbox:checked + .switch svg path{fill:rgb(255,255,255)}
 
     /* Badge 1080p supprimé */
 
@@ -103,8 +109,8 @@
     }
 
     .options{
-      text-align:left;
-      margin:8px 0 4px;
+      text-align:center;
+      margin:12px 0 8px;
       font-size:12px;
       color:#a0a0cc;
     }
@@ -112,6 +118,7 @@
       display:block;
       margin-bottom:6px;
       font-weight:500;
+      text-align:center;
     }
     #ua-select{
       -webkit-appearance:none;
@@ -179,7 +186,7 @@
     .stats{
       display:flex;
       justify-content:space-around;
-      margin:12px 0 10px;
+      margin:16px 0 14px;
       font-family:'Space Grotesk',sans-serif;
     }
     .stat{text-align:center}
@@ -198,44 +205,32 @@
     }
 
     .pause-site-container{
-      margin:8px 0 4px;
+      margin:14px 0 8px;
       text-align:center;
       display:flex;
       justify-content:center;
-      gap:8px;
+      gap:10px;
     }
     .btn{
-      border:none;
-      border-radius:8px;
-      padding:6px 12px;
-      font-size:11px;
+      border:1px solid rgba(160,216,255,0.35);
+      border-radius:10px;
+      padding:8px 12px;
+      font-size:12px;
       cursor:pointer;
       font-family:'Inter',sans-serif;
       transition:all .2s ease;
       backdrop-filter:blur(8px);
       display:inline-flex;
       align-items:center;
+      justify-content:center;
+      text-align:center;
       gap:6px;
+      color:#e6f9ff;
+      background:linear-gradient(135deg, rgba(160,216,255,0.18), rgba(224,195,252,0.18));
+      box-shadow:0 2px 10px rgba(0,0,0,0.22);
     }
-    #pause-site-btn{
-      background:linear-gradient(135deg,rgba(160,216,255,0.15),rgba(224,195,252,0.15));
-      border:1px solid rgba(160,216,255,0.3);
-      color:#e0e0ff;
-      box-shadow:0 2px 8px rgba(0,0,0,0.18);
-      letter-spacing:.4px;
-    }
-    #pause-site-btn.paused{
-      background:rgba(255,111,111,0.08);
-      border-color:rgba(255,111,111,0.4);
-      color:#ffb3b3;
-    }
-    #pause-site-btn:hover{transform:translateY(-1px);box-shadow:0 3px 8px rgba(0,0,0,0.2)}
-    #refresh-btn{
-      background:rgba(255,255,255,0.08);
-      border:1px solid rgba(255,255,255,0.15);
-      color:#a0d8ff;
-    }
-    #refresh-btn:hover{transform:translateY(-1px);box-shadow:0 3px 8px rgba(0,0,0,0.2)}
+    .btn:hover{transform:translateY(-1px);box-shadow:0 3px 10px rgba(0,0,0,0.25)}
+    .pause-site-container .btn{flex:1;}
 
     .footer{
       font-size:9px;
@@ -263,6 +258,32 @@
       opacity:0.5;
       filter:grayscale(0.1);
     }
+
+    /* Aurora animée fluide en arrière-plan */
+    body::before{
+      content:"";
+      position:absolute;
+      inset:-10% -10% -10% -10%;
+      pointer-events:none;
+      z-index:0;
+      opacity:.18;
+      filter:blur(14px);
+      background:
+        radial-gradient(120% 80% at 0% 0%, rgba(160,216,255,0.20) 0%, rgba(160,216,255,0.0) 60%),
+        radial-gradient(100% 80% at 100% 100%, rgba(224,195,252,0.18) 0%, rgba(224,195,252,0.0) 60%),
+        linear-gradient(120deg, rgba(160,216,255,0.08), rgba(224,195,252,0.08));
+      transform:translate3d(0,0,0);
+      animation: auroraFlow 22s ease-in-out infinite;
+    }
+    @keyframes auroraFlow {
+      0%   { transform: translate(-10px,-6px) rotate(0deg); opacity:.16; }
+      25%  { transform: translate(8px,6px) rotate(1deg);  opacity:.18; }
+      50%  { transform: translate(12px,-4px) rotate(2deg); opacity:.20; }
+      75%  { transform: translate(-6px,8px) rotate(1deg); opacity:.18; }
+      100% { transform: translate(-10px,-6px) rotate(0deg); opacity:.16; }
+    }
+    .container > *{ position:relative; z-index:1; }
+    body.off::before{ opacity:.10; }
   </style>
 </head>
 <body>
@@ -295,18 +316,10 @@
         </div>
       </div>
 
-      <!-- PREMIUM TOGGLE -->
-      <div class="premium-toggle">
-        <label>
-          <input type="checkbox" id="premium-toggle" />
-          <span>Forcer l'expérience YouTube Premium-friendly (1080p & confort)</span>
-        </label>
-      </div>
-
-      <!-- OPTIONS + ALERTE (ligne sobre) -->
+      <!-- OPTIONS (UA renommé) -->
       <div class="settings-row">
         <div class="options">
-          <label for="ua-select">User-Agent YouTube :</label>
+          <label for="ua-select">User-Agent :</label>
           <select id="ua-select">
             <option value="random">Aléatoire (sûr)</option>
             <option value="chrome">Chrome Desktop</option>
@@ -317,6 +330,7 @@
             <option value="safari-mobile">Safari Mobile</option>
           </select>
         </div>
+      </div>
 
       <!-- PAUSE / REFRESH -->
       <div class="pause-site-container">
@@ -328,9 +342,7 @@
       </div>
     </div>
 
-    <div class="footer">
-      Options avancées & whitelist chaînes : voir <strong>Options PureBlock</strong>.
-    </div>
+    <div class="footer">Si ça bug fréro fais F5 et me fais pas chier ta vu</div>
   </div>
 
   <script src="popup.js"></script>
