@@ -9,6 +9,8 @@ let sleeping = false;
 let lastAdTs = Date.now();
 let prevMuted = null;
 let boostedPlayback = false;
+let bitrateBoost = false;
+let preferHDR = false;
 
 // Anti‑pub: assainir les réponses player et la variable ytInitialPlayerResponse
 initAdResponseSanitizer();
@@ -741,5 +743,119 @@ function reportBlocked(count, bytes) {
       },
       () => {}
     );
+  } catch (e) {}
+}
+// === Bitrate Boost (YouTube) — qualité maximale constante + annotation Stats ===
+(function initBitrateBoost(){
+  try {
+    // Charger les préférences
+    api.storage?.local?.get?.(['bitrateBoost','preferHDR'], (data) => {
+      bitrateBoost = data?.bitrateBoost === true;
+      preferHDR = data?.preferHDR === true;
+      if (bitrateBoost) {
+        setupQualityKeeper();
+      }
+    });
+
+    // Observer les changements de storage
+    api.storage?.onChanged?.addListener?.((changes) => {
+      if (changes.bitrateBoost) {
+        bitrateBoost = changes.bitrateBoost.newValue === true;
+        setupQualityKeeper();
+      }
+      if (changes.preferHDR) {
+        preferHDR = changes.preferHDR.newValue === true;
+      }
+      scheduleAnnotateStats();
+    });
+
+    // Observer léger: seulement apparition/disparition du panneau Stats
+    if (!window.__pbStatsObserver) {
+      const obs = new MutationObserver(() => scheduleAnnotateStats());
+      obs.observe(document.body, { childList: true, subtree: true });
+      window.__pbStatsObserver = obs;
+    }
+    scheduleAnnotateStats();
+  } catch (e) {}
+})();
+
+function chooseBestQuality(levels) {
+  const prefOrder = ['hd4320','hd2880','hd2160','hd1440','hd1080pPremium','hd1080','hd720','large','medium'];
+  if (!levels || !levels.length) return null;
+  // Si HDR préféré, tenter une étiquette Premium/HDR
+  if (preferHDR) {
+    const hdrCand = levels.find(q => /2160|1440|1080/.test(q) && /premium|hdr/i.test(q));
+    if (hdrCand) return hdrCand;
+  }
+  for (const q of prefOrder) { if (levels.includes(q)) return q; }
+  return levels[0];
+}
+
+function setupQualityKeeper(){
+  try {
+    const player = document.getElementById('movie_player');
+    if (!player || typeof player.getAvailableQualityLevels !== 'function') return;
+    if (!bitrateBoost) return;
+
+    // Patch setPlaybackQuality pour éviter retours auto involontaires
+    if (!player.__pbQualityPatched && typeof player.setPlaybackQuality === 'function') {
+      const origSPQ = player.setPlaybackQuality.bind(player);
+      player.setPlaybackQuality = function(q){
+        try {
+          if (bitrateBoost) {
+            const levels = player.getAvailableQualityLevels?.() || [];
+            const best = chooseBestQuality(levels) || q;
+            if (q === 'auto' || (levels.includes(q) && levels.indexOf(q) < levels.indexOf(best))) {
+              q = best;
+            }
+          }
+        } catch {}
+        return origSPQ(q);
+      };
+      player.__pbQualityPatched = true;
+    }
+
+    const applyTop = () => {
+      try {
+        const levels = player.getAvailableQualityLevels?.() || [];
+        const best = chooseBestQuality(levels);
+        if (best) {
+          player.setPlaybackQualityRange?.(best);
+          player.setPlaybackQuality?.(best);
+        }
+      } catch (e) {}
+    };
+
+    applyTop();
+    // Réappliquer à différents événements
+    window.addEventListener('yt-navigate-finish', () => setTimeout(applyTop, 600), { passive: true });
+    const qTick = setInterval(applyTop, 1200);
+    player.addEventListener?.('onPlaybackQualityChange', applyTop);
+  } catch (e) {}
+}
+
+let __pbAnnotQueued = false;
+function scheduleAnnotateStats(){
+  if (__pbAnnotQueued) return;
+  __pbAnnotQueued = true;
+  setTimeout(() => { __pbAnnotQueued = false; annotateStatsPanelSafe(); }, 150);
+}
+
+function annotateStatsPanelSafe(){
+  try {
+    const panel = document.querySelector('.html5-video-info-panel-content');
+    if (!panel || !panel.isConnected) return;
+    let line = panel.querySelector('.pureblock-stats-line');
+    const text = `PureBlock Bitrate Booster: ${bitrateBoost ? 'ON' : 'OFF'} · HDR: ${preferHDR ? 'ON' : 'OFF'}`;
+    if (!line) {
+      line = document.createElement('div');
+      line.className = 'pureblock-stats-line';
+      line.style.cssText = 'font-size:11px;color:#8ef;opacity:.9;padding:2px 0;';
+      line.textContent = text;
+      // Insérer en bas pour éviter de casser la mise en page
+      panel.appendChild(line);
+    } else {
+      if (line.textContent !== text) line.textContent = text;
+    }
   } catch (e) {}
 }
