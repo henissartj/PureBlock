@@ -214,6 +214,19 @@
             </div>
             <input type="checkbox" id="debug-toggle">
           </div>
+
+          <div class="toggle-row">
+            <div>
+              <span class="label">Qualité vidéo cible</span>
+              <small>Auto Premium-friendly / 1080p / 2160p / Off.</small>
+            </div>
+            <select id="quality-select">
+              <option value="auto">Auto (Premium-friendly)</option>
+              <option value="1080p">1080p</option>
+              <option value="2160p">2160p</option>
+              <option value="off">Off</option>
+            </select>
+          </div>
         </div>
 
         <div class="card">
@@ -223,6 +236,14 @@
           <button id="reset-stats-btn" class="danger-btn">Réinitialiser les statistiques locales</button>
           <div class="hint">
             Ceci remet à zéro le compteur de pubs bloquées et les données économisées.
+          </div>
+
+          <div class="toggle-row" style="margin-top:8px;">
+            <div>
+              <span class="label">Stealth renforcé</span>
+              <small>Supprime Origin (CDN) et quelques entêtes client YouTube.</small>
+            </div>
+            <input type="checkbox" id="stealth-strong-toggle">
           </div>
         </div>
       </div>

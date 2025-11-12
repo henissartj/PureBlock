@@ -1,4 +1,5 @@
-const api = typeof browser !== 'undefined' ? browser : chrome;
+const api = typeof browser !== 'undefined' ? browser : (typeof chrome !== 'undefined' ? chrome : null);
+const hasApi = !!(api && api.storage && api.storage.local);
 
 let allowedChannels = [];
 let pausedHosts = [];
@@ -62,6 +63,36 @@ function renderPausedHosts() {
 }
 
 function init() {
+  const qualitySelectEl = document.getElementById('quality-select');
+  const stealthToggleEl = document.getElementById('stealth-strong-toggle');
+
+  if (!hasApi) {
+    // Mode aperçu hors contexte extension: valeurs par défaut, pas de persistance
+    const pf = document.getElementById('purefocus-toggle');
+    const sp = document.getElementById('sponsor-toggle');
+    const dbg = document.getElementById('debug-toggle');
+    if (pf) pf.checked = false;
+    if (sp) sp.checked = false;
+    if (dbg) dbg.checked = false;
+    if (qualitySelectEl) qualitySelectEl.value = 'auto';
+    if (stealthToggleEl) stealthToggleEl.checked = false;
+
+    // N'attache que des listeners UI no-op
+    document.getElementById('purefocus-toggle')?.addEventListener('change', () => {});
+    document.getElementById('sponsor-toggle')?.addEventListener('change', () => {});
+    document.getElementById('debug-toggle')?.addEventListener('change', () => {});
+    qualitySelectEl?.addEventListener('change', () => {});
+    stealthToggleEl?.addEventListener('change', () => {});
+
+    // Listes locales vides en aperçu
+    renderChannels();
+    renderPausedHosts();
+    document.getElementById('add-channel-btn')?.addEventListener('click', () => {});
+    document.getElementById('channel-input')?.addEventListener('keydown', () => {});
+    document.getElementById('reset-stats-btn')?.addEventListener('click', () => {});
+    return;
+  }
+
   api.storage.local.get(
     [
       'pureFocus',
@@ -70,7 +101,10 @@ function init() {
       'allowedChannels',
       'pausedHosts',
       'blocked',
-      'saved'
+      'saved',
+      'targetQuality',
+      'stealthStrong',
+      'premium1080'
     ],
     (data) => {
       document.getElementById('purefocus-toggle').checked =
@@ -79,6 +113,14 @@ function init() {
         data.sponsorSkip === true;
       document.getElementById('debug-toggle').checked =
         data.debugOverlay === true;
+
+      if (qualitySelectEl) {
+        qualitySelectEl.value = data.targetQuality || 'auto';
+      }
+
+      if (stealthToggleEl) {
+        stealthToggleEl.checked = data.stealthStrong === true;
+      }
 
       allowedChannels = Array.isArray(data.allowedChannels)
         ? data.allowedChannels
@@ -104,6 +146,22 @@ function init() {
   document.getElementById('debug-toggle').addEventListener('change', (e) => {
     api.storage.local.set({ debugOverlay: e.target.checked });
   });
+
+  if (qualitySelectEl) {
+    qualitySelectEl.addEventListener('change', (e) => {
+      const val = e.target.value;
+      api.storage.local.set({ targetQuality: val });
+      api.storage.local.set({ premium1080: val !== 'off' });
+    });
+  }
+
+  if (stealthToggleEl) {
+    stealthToggleEl.addEventListener('change', (e) => {
+      api.storage.local.set({ stealthStrong: e.target.checked }, () => {
+        api.runtime.sendMessage({ action: 'updateStealth' });
+      });
+    });
+  }
 
   // Add channel
   document.getElementById('add-channel-btn').addEventListener('click', () => {

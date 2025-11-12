@@ -31,6 +31,7 @@ export async function initPrivacy() {
     return;
   }
 
+  const { stealthStrong = false } = await api.storage.local.get(['stealthStrong']);
   const removeRuleIds = Object.values(RULES);
   const addRules = [];
 
@@ -148,6 +149,42 @@ export async function initPrivacy() {
       resourceTypes: ["media", "image", "xmlhttprequest"]
     }
   });
+
+  // Mode stealth renforcé (optionnel)
+  if (stealthStrong) {
+    // Supprime Origin pour médias CDN (réduit le lien au contexte YT)
+    addRules.push({
+      id: 300006,
+      priority: 35,
+      action: {
+        type: "modifyHeaders",
+        requestHeaders: [
+          { header: "Origin", operation: "remove" }
+        ]
+      },
+      condition: {
+        urlFilter: "googlevideo.com|ytimg.com",
+        resourceTypes: ["media", "image", "xmlhttprequest"]
+      }
+    });
+
+    // Supprime quelques entêtes client YouTube (sans casser la lecture)
+    addRules.push({
+      id: 300007,
+      priority: 35,
+      action: {
+        type: "modifyHeaders",
+        requestHeaders: [
+          { header: "x-youtube-client-name", operation: "remove" },
+          { header: "x-youtube-client-version", operation: "remove" }
+        ]
+      },
+      condition: {
+        urlFilter: "youtube.com|youtubei|googleapis.com",
+        resourceTypes: ["xmlhttprequest", "script"]
+      }
+    });
+  }
 
   try {
     await api.declarativeNetRequest.updateDynamicRules({

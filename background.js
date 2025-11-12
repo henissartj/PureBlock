@@ -1,4 +1,4 @@
-import { initPrivacy } from "./privacy.js";
+import { initPrivacy } from "./stealth.js";
 
 const api = typeof browser !== "undefined" ? browser : chrome;
 const UA_RULE_ID = 100001;
@@ -19,7 +19,7 @@ function getRandomUA() {
 }
 
 async function ensureInitialState() {
-  const stored = await api.storage.local.get(["enabled", "blocked", "saved", "selectedUA", "alertsEnabled"]);
+  const stored = await api.storage.local.get(["enabled", "blocked", "saved", "selectedUA", "alertsEnabled", "stealthStrong", "targetQuality", "premium1080"]);
 
   if (typeof stored.enabled === "undefined") {
     await api.storage.local.set({
@@ -27,7 +27,10 @@ async function ensureInitialState() {
       blocked: 0,
       saved: 0,
       alertsEnabled: true,
-      selectedUA: "random"
+      selectedUA: "random",
+      stealthStrong: false,
+      targetQuality: "auto",
+      premium1080: true
     });
   }
 
@@ -112,6 +115,15 @@ api.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     }
   })();
   return true;
+});
+
+// Rafraîchit les règles de confidentialité quand le réglage Stealth change
+api.runtime.onMessage.addListener((msg) => {
+  (async () => {
+    if (msg.action === "updateStealth") {
+      await initPrivacy();
+    }
+  })();
 });
 
 // === AJOUT DANS background.js ===

@@ -2,41 +2,40 @@
 (() => {
   'use strict';
 
-  const PREFERRED_QUALITY = 'hd1080';
+  const QUALITY_MAP = {
+    off: null,
+    '1080p': 'hd1080',
+    '2160p': 'hd2160',
+    auto: 'auto'
+  };
   const CHECK_INTERVAL = 1500;
-  let isEnabled = true; // État local du Premium
+  let isEnabled = true; // piloté par premium1080
+  let targetQuality = 'auto';
 
   // === RÉCUPÉRER L'ÉTAT SAUVEGARDÉ ===
-  chrome.storage.local.get(['premiumEnabled'], (data) => {
-    isEnabled = data.premiumEnabled !== false;
+  chrome.storage.local.get(['premium1080', 'targetQuality'], (data) => {
+    isEnabled = data.premium1080 !== false;
+    targetQuality = (data.targetQuality || 'auto');
   });
 
   // === ÉCOUTER LES CHANGEMENTS (popup, background, autre onglet) ===
   chrome.storage.onChanged.addListener((changes) => {
-    if (changes.premiumEnabled !== undefined) {
-      isEnabled = changes.premiumEnabled.newValue;
+    if (changes.premium1080 !== undefined) {
+      isEnabled = changes.premium1080.newValue;
       if (!isEnabled) {
-        // Optionnel : réinitialise la qualité si désactivé
         const player = document.getElementById('movie_player');
         if (player && player.setPlaybackQuality) {
           player.setPlaybackQuality('auto');
         }
       }
+    }
+    if (changes.targetQuality !== undefined) {
+      targetQuality = changes.targetQuality.newValue || 'auto';
     }
   });
 
   // === ÉCOUTER LES MESSAGES DU BACKGROUND ===
-  chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-    if (msg.action === 'togglePremium') {
-      isEnabled = msg.enabled;
-      if (!isEnabled) {
-        const player = document.getElementById('movie_player');
-        if (player && player.setPlaybackQuality) {
-          player.setPlaybackQuality('auto');
-        }
-      }
-    }
-  });
+  // Ancienne API non utilisée désormais (on s'appuie sur storage)
 
   const log = (msg) => {
     console.log('%c[PureBlock 1080p+] ' + msg, 'color: #00ff88; font-weight: bold;');
@@ -51,24 +50,41 @@
     const qualities = player.getAvailableQualityLevels();
     if (!qualities?.length) return;
 
-    if (qualities.includes('hd1080pPremium')) {
-      player.setPlaybackQualityRange('hd1080pPremium');
-      player.setPlaybackQuality('hd1080pPremium');
-      log('1080p Premium activé (VP9)');
+    // Mode off
+    if (targetQuality === 'off') {
+      player.setPlaybackQuality('auto');
       return;
     }
 
-    if (qualities.includes(PREFERRED_QUALITY)) {
-      player.setPlaybackQualityRange(PREFERRED_QUALITY);
-      player.setPlaybackQuality(PREFERRED_QUALITY);
-      log(`${PREFERRED_QUALITY} forcé`);
+    // Auto premium-friendly: privilégie 1080p Premium si dispo, sinon meilleure qualité
+    if (targetQuality === 'auto') {
+      if (qualities.includes('hd1080pPremium')) {
+        player.setPlaybackQualityRange('hd1080pPremium');
+        player.setPlaybackQuality('hd1080pPremium');
+        log('1080p Premium activé (auto)');
+        return;
+      }
+      const best = qualities[0];
+      player.setPlaybackQualityRange(best);
+      player.setPlaybackQuality(best);
+      log(`Auto → ${best}`);
       return;
     }
 
-    const best = qualities[0];
-    player.setPlaybackQualityRange(best);
-    player.setPlaybackQuality(best);
-    log(`Fallback: ${best}`);
+    // Cibles explicites
+    const desired = QUALITY_MAP[targetQuality];
+    if (desired && qualities.includes(desired)) {
+      player.setPlaybackQualityRange(desired);
+      player.setPlaybackQuality(desired);
+      log(`Qualité cible → ${targetQuality}`);
+      return;
+    }
+
+    // Fallback raisonnable
+    const fallback = qualities.includes('hd1080') ? 'hd1080' : qualities[0];
+    player.setPlaybackQualityRange(fallback);
+    player.setPlaybackQuality(fallback);
+    log(`Fallback → ${fallback}`);
   }
 
   // Fallback menu
