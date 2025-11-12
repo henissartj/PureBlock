@@ -106,7 +106,8 @@ function init() {
       'stealthStrong',
       'premium1080',
       'bitrateBoost',
-      'preferHDR'
+      'preferHDR',
+      'youtubeCodecPref'
     ],
     (data) => {
       document.getElementById('purefocus-toggle').checked =
@@ -132,6 +133,11 @@ function init() {
       const hdrToggleEl = document.getElementById('hdr-toggle');
       if (hdrToggleEl) {
         hdrToggleEl.checked = data.preferHDR === true;
+      }
+
+      const codecSelectEl = document.getElementById('codec-select');
+      if (codecSelectEl) {
+        codecSelectEl.value = data.youtubeCodecPref || 'auto';
       }
 
       allowedChannels = Array.isArray(data.allowedChannels)
@@ -183,6 +189,12 @@ function init() {
   const hdrToggleEl = document.getElementById('hdr-toggle');
   hdrToggleEl?.addEventListener('change', (e) => {
     api.storage.local.set({ preferHDR: e.target.checked });
+  });
+
+  const codecSelectEl = document.getElementById('codec-select');
+  codecSelectEl?.addEventListener('change', (e) => {
+    const val = e.target.value || 'auto';
+    api.storage.local.set({ youtubeCodecPref: val });
   });
 
   // Add channel

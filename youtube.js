@@ -11,6 +11,7 @@ let prevMuted = null;
 let boostedPlayback = false;
 let bitrateBoost = false;
 let preferHDR = false;
+let codecPref = 'auto';
 
 // Anti‑pub: assainir les réponses player et la variable ytInitialPlayerResponse
 initAdResponseSanitizer();
@@ -89,6 +90,17 @@ function sanitizePlayerJson(obj) {
         }
       }
     }
+
+    // Réordonne les formats selon la préférence codec pour influencer la sélection initiale
+    try {
+      const applySort = (sd) => {
+        if (!sd) return;
+        if (Array.isArray(sd.adaptiveFormats)) sd.adaptiveFormats = sortFormatsByCodecPreference(sd.adaptiveFormats);
+        if (Array.isArray(sd.formats)) sd.formats = sortFormatsByCodecPreference(sd.formats);
+      };
+      if (obj.streamingData) applySort(obj.streamingData);
+      if (obj.playerResponse && obj.playerResponse.streamingData) applySort(obj.playerResponse.streamingData);
+    } catch (_) {}
   } catch (e) {}
   return obj;
 }
@@ -133,6 +145,61 @@ function initXHRAdSanitizer() {
     PB_XHR.__pbWrapped = true;
     window.XMLHttpRequest = PB_XHR;
   } catch (e) {}
+}
+
+// — Préférence codec: tri doux des formats vidéo
+function getCodecTagFromMime(mt) {
+  mt = mt || '';
+  // Exemples: 'video/webm; codecs="vp9"', 'video/mp4; codecs="avc1.640028"', 'video/mp4; codecs="av01.0.08M.08"'
+  const m = /codecs\s*=\s*"([^"]+)"/i.exec(mt);
+  const c = (m && m[1] || '').toLowerCase();
+  if (c.includes('av01')) return 'av1';
+  if (c.includes('vp9')) return 'vp9';
+  if (c.includes('avc1') || c.includes('h264')) return 'h264';
+  return 'other';
+}
+
+function isVideoFormat(f) {
+  const mt = f?.mimeType || '';
+  return /video\//.test(mt);
+}
+
+function isAudioFormat(f) {
+  const mt = f?.mimeType || '';
+  return /audio\//.test(mt);
+}
+
+function scoreVideoFormat(f) {
+  // Base sur résolution et fps
+  const h = Number(f?.height || 0);
+  const fps = Number(f?.fps || 0);
+  let score = h * 10 + (fps >= 60 ? 300 : 0);
+  // HDR (si préféré)
+  const mt = f?.mimeType || '';
+  const isHdr = /vp9\.2|hdr|hlg|pq|bt2020/i.test(mt) || /HDR/i.test(f?.qualityLabel || '');
+  if (preferHDR && isHdr) score += 500;
+  // Codec
+  const tag = getCodecTagFromMime(mt);
+  if (codecPref === 'av1') score += (tag === 'av1' ? 400 : 0);
+  else if (codecPref === 'vp9') score += (tag === 'vp9' ? 300 : 0);
+  else if (codecPref === 'h264') score += (tag === 'h264' ? 250 : 0);
+  // Légère pénalité si autre que préféré lorsque préférence explicite
+  if (codecPref !== 'auto' && tag !== codecPref) score -= 50;
+  return score;
+}
+
+function sortFormatsByCodecPreference(arr) {
+  try {
+    if (!Array.isArray(arr) || arr.length === 0) return arr;
+    const videos = [];
+    const audios = [];
+    for (const f of arr) {
+      if (isVideoFormat(f)) videos.push(f); else if (isAudioFormat(f)) audios.push(f); else videos.push(f);
+    }
+    videos.sort((a,b) => scoreVideoFormat(b) - scoreVideoFormat(a));
+    // Conserver ordre audio intouché
+    return [...videos, ...audios];
+  } catch (_) { return arr; }
 }
 
 // === Téléchargement YouTube: bouton et menu qualité ===
@@ -749,9 +816,10 @@ function reportBlocked(count, bytes) {
 (function initBitrateBoost(){
   try {
     // Charger les préférences
-    api.storage?.local?.get?.(['bitrateBoost','preferHDR'], (data) => {
+    api.storage?.local?.get?.(['bitrateBoost','preferHDR','youtubeCodecPref'], (data) => {
       bitrateBoost = data?.bitrateBoost === true;
       preferHDR = data?.preferHDR === true;
+      codecPref = typeof data?.youtubeCodecPref === 'string' ? data.youtubeCodecPref : 'auto';
       if (bitrateBoost) {
         setupQualityKeeper();
       }
@@ -765,6 +833,9 @@ function reportBlocked(count, bytes) {
       }
       if (changes.preferHDR) {
         preferHDR = changes.preferHDR.newValue === true;
+      }
+      if (changes.youtubeCodecPref) {
+        codecPref = typeof changes.youtubeCodecPref.newValue === 'string' ? changes.youtubeCodecPref.newValue : 'auto';
       }
       scheduleAnnotateStats();
     });
@@ -846,7 +917,7 @@ function annotateStatsPanelSafe(){
     const panel = document.querySelector('.html5-video-info-panel-content');
     if (!panel || !panel.isConnected) return;
     let line = panel.querySelector('.pureblock-stats-line');
-    const text = `PureBlock Bitrate Booster: ${bitrateBoost ? 'ON' : 'OFF'} · HDR: ${preferHDR ? 'ON' : 'OFF'}`;
+    const text = `PureBlock Bitrate Booster: ${bitrateBoost ? 'ON' : 'OFF'} · HDR: ${preferHDR ? 'ON' : 'OFF'} · Codec: ${codecPref.toUpperCase()}`;
     if (!line) {
       line = document.createElement('div');
       line.className = 'pureblock-stats-line';
