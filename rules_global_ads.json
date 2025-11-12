@@ -25,4 +25,16 @@
   {"id":205,"priority":2,"action":{"type":"redirect","redirect":{"extensionPath":"/assets/empty.json"}},"condition":{"urlFilter":"*://pubads.g.doubleclick.net/*","resourceTypes":["xmlhttprequest"]}},
   {"id":206,"priority":2,"action":{"type":"redirect","redirect":{"extensionPath":"/assets/empty.js"}},"condition":{"urlFilter":"*://pagead2.googlesyndication.com/*","resourceTypes":["script"]}},
   {"id":207,"priority":2,"action":{"type":"redirect","redirect":{"extensionPath":"/assets/empty.json"}},"condition":{"urlFilter":"*://pagead2.googlesyndication.com/*","resourceTypes":["xmlhttprequest"]}}
+  ,
+  {"id":131,"priority":1,"action":{"type":"block"},"condition":{"urlFilter":"*://*.adnxs.com/*","resourceTypes":["script","xmlhttprequest","image","media"]}},
+  {"id":132,"priority":1,"action":{"type":"block"},"condition":{"urlFilter":"*://*.moatads.com/*","resourceTypes":["script","xmlhttprequest","image","media"]}},
+  {"id":133,"priority":1,"action":{"type":"block"},"condition":{"urlFilter":"*://*.serving-sys.com/*","resourceTypes":["script","xmlhttprequest","image","media"]}},
+  {"id":134,"priority":1,"action":{"type":"block"},"condition":{"urlFilter":"*://*.quantserve.com/*","resourceTypes":["script","xmlhttprequest","image"]}},
+  {"id":135,"priority":1,"action":{"type":"block"},"condition":{"urlFilter":"*://*.scorecardresearch.com/*","resourceTypes":["script","xmlhttprequest","image"]}},
+  {"id":136,"priority":1,"action":{"type":"block"},"condition":{"urlFilter":"*://*.openx.net/*","resourceTypes":["script","xmlhttprequest","image","media"]}},
+  {"id":137,"priority":1,"action":{"type":"block"},"condition":{"urlFilter":"*://*.adform.net/*","resourceTypes":["script","xmlhttprequest","image","media"]}},
+  {"id":138,"priority":1,"action":{"type":"block"},"condition":{"urlFilter":"*://*.contextweb.com/*","resourceTypes":["script","xmlhttprequest","image","media"]}},
+  {"id":139,"priority":1,"action":{"type":"block"},"condition":{"urlFilter":"*://*.media.net/*","resourceTypes":["script","xmlhttprequest","image","media"]}},
+  {"id":140,"priority":1,"action":{"type":"block"},"condition":{"urlFilter":"*://*.spotx.tv/*","resourceTypes":["script","xmlhttprequest","image","media"]}},
+  {"id":141,"priority":1,"action":{"type":"block"},"condition":{"urlFilter":"*://*.googletagmanager.com/gtm.js*","resourceTypes":["script"]}}
 ]

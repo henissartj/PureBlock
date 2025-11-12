@@ -42,8 +42,16 @@ async function ensureInitialState() {
 async function syncEnabledRuleset(enabled) {
   try {
     await api.declarativeNetRequest.updateEnabledRulesets({
-      enableRulesetIds: enabled ? ["yt-static-rules"] : [],
-      disableRulesetIds: enabled ? [] : ["yt-static-rules"]
+      enableRulesetIds: enabled ? [
+        "yt-static-rules",
+        "global-ads-rules",
+        "param-scrubber-rules"
+      ] : [],
+      disableRulesetIds: enabled ? [] : [
+        "yt-static-rules",
+        "global-ads-rules",
+        "param-scrubber-rules"
+      ]
     });
   } catch (e) {
     console.warn("PureBlock: sync ruleset échec", e);
