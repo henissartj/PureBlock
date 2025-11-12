@@ -78,16 +78,8 @@
       ],
       "run_at": "document_start",
       "all_frames": true
-    },
-    {
-      "matches": [
-        "<all_urls>"
-      ],
-      "js": [
-        "stealth.js"
-      ],
-      "run_at": "document_start"
     }
+    
   ],
   "web_accessible_resources": [
     {
@@ -99,7 +91,6 @@
         "options.js",
         "premium1080p.js",
         "youtube.js",
-        "stealth.js",
         "content.js",
         "rules_yt_ads.json",
         "assets/empty.js",

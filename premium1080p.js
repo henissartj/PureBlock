@@ -115,7 +115,18 @@
     }
   });
 
-  observer.observe(document.body, { childList: true, subtree: true });
+  try {
+    const target = document.body || document.documentElement;
+    observer.observe(target, { childList: true, subtree: true });
+  } catch (e) {
+    // Attente DOM prêt
+    document.addEventListener('DOMContentLoaded', () => {
+      try {
+        const target2 = document.body || document.documentElement;
+        observer.observe(target2, { childList: true, subtree: true });
+      } catch {}
+    }, { once: true });
+  }
 
   // Réappliquer après navigation interne YouTube
   window.addEventListener('yt-navigate-finish', () => {

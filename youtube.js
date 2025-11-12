@@ -729,7 +729,9 @@ function hookNavigationWake() {
     try { injectDownloadButton(); } catch (e) {}
     try { observeControlsForDownloadButton(); } catch (e) {}
   }, { passive: true });
+}
 
+// Défini au niveau supérieur pour éviter ReferenceError lors du bootstrap
 function observeControlsForDownloadButton() {
   // Téléchargement désactivé
   return;
@@ -747,7 +749,6 @@ function observeControlsForDownloadButton() {
     mo.observe(bottom, { childList: true, subtree: true });
     bottom.__pbObserver = mo;
   } catch (e) {}
-}
 }
 
 function getRoots() {

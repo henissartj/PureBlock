@@ -16,7 +16,15 @@
     { selector: 'ytd-rich-item-renderer[is-promoted], ytd-ad-slot-renderer', style: 'display: none !important; height: 0 !important;' },
     { selector: '.badge-style-type-sponsor, [aria-label*="Sponsorisé"]', style: 'display: none !important;' },
     { selector: '.ytp-ad-module', style: 'display: none !important;' },
-    { selector: 'yt-mealbar-promo-renderer, ytd-banner-promo-renderer', style: 'display: none !important; height: 0 !important;' }
+    { selector: 'yt-mealbar-promo-renderer, ytd-banner-promo-renderer', style: 'display: none !important; height: 0 !important;' },
+    // YouTube in-player ad UI
+    { selector: '.ytp-ad-player-overlay, .ytp-ad-skip-button-container, .ytp-ad-text, .ytp-ad-message-container, .ytp-ad-preview-container, .ytp-ad-progress-list, .ytp-ad-image-overlay, .ytp-ad-overlay-slot', style: 'display: none !important; height: 0 !important; opacity: 0 !important;' },
+    // Feed/search/display ad renderers
+    { selector: 'ytd-promoted-video-renderer, ytd-promoted-sparkles-text-search-renderer, ytd-promoted-sparkles-web-renderer, ytd-display-ad-renderer, ytd-in-feed-ad-layout-renderer, ytd-carousel-ad-renderer, ytd-ad-slot-renderer, ytd-action-companion-ad-renderer, ytd-search-pyv-renderer, ytd-companion-slot-renderer', style: 'display: none !important; height: 0 !important; margin: 0 !important; padding: 0 !important;' },
+    // Bannières/primetime
+    { selector: 'ytd-primetime-banner-renderer, ytd-statement-banner-renderer', style: 'display: none !important; height: 0 !important;' },
+    // Badges sponsorisés
+    { selector: '[aria-label*="Promoted"], [aria-label*="Sponsored"], .badge-style-type-ads', style: 'display: none !important;' }
   ];
 
   function injectCosmeticCSS() {
@@ -31,6 +39,33 @@
   function applyCosmetic() {
     if (isPaused) return;
     injectCosmeticCSS();
+  }
+
+  function getRoots() {
+    const roots = [];
+    const push = (sel) => {
+      const el = document.querySelector(sel);
+      if (el) roots.push(el);
+    };
+    push('ytd-app');
+    push('ytd-watch-flexy');
+    push('#content');
+    push('#primary');
+    push('.html5-video-player');
+    return roots.length ? roots : [document.documentElement];
+  }
+
+  function attachScopedObservers() {
+    if (observer) {
+      try { observer.disconnect(); } catch {}
+    }
+    observer = new MutationObserver(throttledClean);
+    const roots = getRoots();
+    for (const root of roots) {
+      try {
+        observer.observe(root, { childList: true, subtree: true });
+      } catch {}
+    }
   }
 
   function handleAds() {
@@ -96,12 +131,48 @@
     requestIdleCallback(() => {
       try {
         applyCosmetic();
+        purgeSponsoredCards();
         handleAds();
         forcePremiumQuality();
       } finally {
         cleanPending = false;
       }
     }, { timeout: 1000 });
+  }
+
+  function purgeSponsoredCards() {
+    if (isPaused) return;
+    try {
+      const candidates = [
+        'ytd-rich-item-renderer',
+        'ytd-video-renderer',
+        'ytd-grid-video-renderer',
+        'ytd-reel-shelf-renderer',
+        'ytd-search-pyv-renderer',
+        'ytd-promoted-video-renderer',
+        'ytd-promoted-sparkles-text-search-renderer',
+        'ytd-promoted-sparkles-web-renderer',
+        'ytd-display-ad-renderer',
+        'ytd-in-feed-ad-layout-renderer',
+        'ytd-carousel-ad-renderer',
+        'ytd-ad-slot-renderer'
+      ];
+      const isSponsored = (el) => {
+        try {
+          if (el.hasAttribute('is-promoted')) return true;
+          const label = (el.getAttribute('aria-label') || '').toLowerCase();
+          if (label.includes('sponsorisé') || label.includes('promoted') || label.includes('sponsored')) return true;
+          const txt = (el.textContent || '').toLowerCase();
+          if (txt.includes('sponsorisé') || txt.includes('promoted') || txt.includes('sponsored')) return true;
+        } catch {}
+        return false;
+      };
+      for (const sel of candidates) {
+        document.querySelectorAll(sel).forEach(node => {
+          try { if (isSponsored(node)) node.remove(); } catch {}
+        });
+      }
+    } catch {}
   }
 
   async function startBlocking() {
@@ -180,29 +251,3 @@
     });
   }
 })();
-  function getRoots() {
-    const roots = [];
-    const push = (sel) => {
-      const el = document.querySelector(sel);
-      if (el) roots.push(el);
-    };
-    push('ytd-app');
-    push('ytd-watch-flexy');
-    push('#content');
-    push('#primary');
-    push('.html5-video-player');
-    return roots.length ? roots : [document.documentElement];
-  }
-
-  function attachScopedObservers() {
-    if (observer) {
-      try { observer.disconnect(); } catch {}
-    }
-    observer = new MutationObserver(throttledClean);
-    const roots = getRoots();
-    for (const root of roots) {
-      try {
-        observer.observe(root, { childList: true, subtree: true });
-      } catch {}
-    }
-  }
