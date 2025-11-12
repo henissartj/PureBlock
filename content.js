@@ -5,29 +5,31 @@
   let observer = null;
   let cleanupInterval = null;
   let cleanPending = false;
+  let adMuteApplied = false;
+  let cosmeticsStyleEl = null;
 
   const domain = location.hostname.replace(/^www\./, '');
 
   const cosmeticFilters = [
-    { selector: '.ytp-ad-overlay-container, .ytp-ad-player-overlay', style: 'display: none !important; height: 0 !important;' },
+    { selector: '.ytp-ad-overlay-container', style: 'display: none !important; height: 0 !important;' },
     { selector: 'ytd-rich-item-renderer[is-promoted], ytd-ad-slot-renderer', style: 'display: none !important; height: 0 !important;' },
     { selector: '.badge-style-type-sponsor, [aria-label*="Sponsorisé"]', style: 'display: none !important;' },
     { selector: '.ytp-ad-module', style: 'display: none !important;' },
     { selector: 'yt-mealbar-promo-renderer, ytd-banner-promo-renderer', style: 'display: none !important; height: 0 !important;' }
   ];
 
+  function injectCosmeticCSS() {
+    if (cosmeticsStyleEl) return;
+    const css = cosmeticFilters.map((f) => `${f.selector}{${f.style}}`).join('\n');
+    cosmeticsStyleEl = document.createElement('style');
+    cosmeticsStyleEl.id = 'pb-cosmetics';
+    cosmeticsStyleEl.textContent = css;
+    (document.head || document.documentElement).appendChild(cosmeticsStyleEl);
+  }
+
   function applyCosmetic() {
     if (isPaused) return;
-    for (const f of cosmeticFilters) {
-      const els = document.querySelectorAll(f.selector);
-      for (const el of els) {
-        if (!el.dataset.pbHidden) {
-          el.dataset.pbHidden = '1';
-          el.style.cssText += f.style;
-          if (el.parentElement) el.parentElement.style.flexWrap = 'wrap';
-        }
-      }
-    }
+    injectCosmeticCSS();
   }
 
   function handleAds() {
@@ -41,10 +43,16 @@
     const isAd = document.body.querySelector('.ad-showing, .ad-interrupting');
     if (isAd) {
       video.playbackRate = 16;
-      video.muted = true;
+      if (!adMuteApplied) {
+        video.muted = true;
+        adMuteApplied = true;
+      }
     } else {
       if (video.playbackRate !== 1) video.playbackRate = 1;
-      if (video.muted) video.muted = false;
+      if (adMuteApplied) {
+        video.muted = false;
+        adMuteApplied = false;
+      }
     }
   }
 
@@ -114,22 +122,13 @@
     applyCosmetic();
     handleAds();
     forcePremiumQuality();
-
-    cleanupInterval = setInterval(() => {
-      applyCosmetic();
-      handleAds();
-      forcePremiumQuality();
-    }, 1000);
   }
 
   function resetInjectedStyles() {
-    document.querySelectorAll('[data-pb-hidden]').forEach((el) => {
-      el.removeAttribute('data-pb-hidden');
-      el.style.cssText = el.style.cssText
-        .replace(/!important/g, '')
-        .replace(/display:\s*none[^;]*;?/g, '')
-        .replace(/height:\s*0[^;]*;?/g, '');
-    });
+    if (cosmeticsStyleEl && cosmeticsStyleEl.parentNode) {
+      cosmeticsStyleEl.parentNode.removeChild(cosmeticsStyleEl);
+      cosmeticsStyleEl = null;
+    }
   }
 
   chrome.runtime.onMessage.addListener((msg) => {

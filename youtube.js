@@ -3,6 +3,7 @@ const api = typeof browser !== "undefined" ? browser : chrome;
 let enabled = true;
 let alertsEnabled = true;
 let observer = null;
+let playerObserver = null;
 let idleScheduled = false;
 let sleeping = false;
 let lastAdTs = Date.now();
@@ -50,6 +51,7 @@ function bootstrap() {
   if (!enabled) return;
   initPreloadGuard();
   observeAds();
+  attachPlayerObserver();
   safeClean();
   hookNavigationWake();
 }
@@ -73,12 +75,15 @@ function observeAds() {
     } else {
       setTimeout(cb, 80);
     }
+
+    // Observer ciblé sur le player pour changements de classe (ad-showing)
+    attachPlayerObserver();
   });
 
   observer.observe(document.documentElement, {
     childList: true,
     subtree: true,
-    attributes: true
+    attributes: false
   });
 }
 
@@ -88,6 +93,12 @@ function stopObserver() {
       observer.disconnect();
     } catch (e) {}
     observer = null;
+  }
+  if (playerObserver) {
+    try {
+      playerObserver.disconnect();
+    } catch (e) {}
+    playerObserver = null;
   }
 }
 
@@ -103,6 +114,7 @@ function wake(fromNav = false) {
     sleeping = false;
     lastAdTs = Date.now();
     observeAds();
+    attachPlayerObserver();
     safeClean();
   }
 }
@@ -145,6 +157,33 @@ function hookNavigationWake() {
       onUrlChange();
     } catch (e) {}
   }, { passive: true });
+}
+
+function attachPlayerObserver() {
+  try {
+    if (playerObserver) return;
+    const player = document.querySelector(".html5-video-player");
+    if (!player) return;
+
+    playerObserver = new MutationObserver(() => {
+      if (!enabled || sleeping || idleScheduled) return;
+      idleScheduled = true;
+      const cb = () => {
+        idleScheduled = false;
+        if (enabled && !sleeping) safeClean();
+      };
+      if ("requestIdleCallback" in window) {
+        requestIdleCallback(cb, { timeout: 120 });
+      } else {
+        setTimeout(cb, 80);
+      }
+    });
+
+    playerObserver.observe(player, {
+      attributes: true,
+      attributeFilter: ["class"]
+    });
+  } catch (e) {}
 }
 
 function initPreloadGuard() {

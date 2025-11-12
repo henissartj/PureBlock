@@ -114,32 +114,6 @@ api.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   return true;
 });
 
-chrome.runtime.onInstalled.addListener(() => {
-  chrome.storage.local.set({ enabled: true, premiumEnabled: true });
-});
-
-chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-  if (msg.action === "toggle") {
-    chrome.storage.local.set({ enabled: msg.enabled });
-    chrome.tabs.query({ url: "*://*.youtube.com/*" }, (tabs) => {
-      tabs.forEach(tab => chrome.tabs.sendMessage(tab.id, { action: "toggle", enabled: msg.enabled }));
-    });
-  }
-
-  if (msg.action === "togglePremium") {
-    chrome.storage.local.set({ premiumEnabled: msg.enabled });
-    chrome.tabs.query({ url: "*://*.youtube.com/*" }, (tabs) => {
-      tabs.forEach(tab => chrome.tabs.sendMessage(tab.id, { action: "togglePremium", enabled: msg.enabled }));
-    });
-  }
-
-  if (msg.action === "updateUA") {
-    chrome.storage.local.set({ selectedUA: msg.selectedUA });
-  }
-
-  sendResponse({ success: true });
-});
-
 // === AJOUT DANS background.js ===
 async function shouldBlockOnTab(tabId) {
   const tab = await api.tabs.get(tabId);
