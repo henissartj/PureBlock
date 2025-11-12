@@ -189,6 +189,56 @@ if (api.declarativeNetRequest?.onRuleMatchedDebug) {
   }
 })();
 
+// Désactive réellement le blocage réseau sur les onglets en pause via une règle session allowAllRequests
+const ALLOW_ALL_SESSION_ID = 500010;
+async function applyPauseAllowAllForTab(tabId, enable) {
+  try {
+    const addRules = enable ? [{
+      id: ALLOW_ALL_SESSION_ID,
+      priority: 1000,
+      action: { type: "allowAllRequests" },
+      condition: { resourceTypes: ["main_frame","sub_frame","script","xmlhttprequest","image","media","stylesheet","font"] }
+    }] : [];
+    await api.declarativeNetRequest.updateSessionRules({
+      removeRuleIds: [ALLOW_ALL_SESSION_ID],
+      addRules
+    }, { tabId });
+  } catch (e) {
+    console.warn("PureBlock: échec allowAllRequests session pause", e);
+  }
+}
+
+// Sur changement de pausedHosts, applique/désactive allowAllRequests par onglet correspondant
+if (api.storage?.onChanged?.addListener) {
+  api.storage.onChanged.addListener(async (changes) => {
+    try {
+      if (changes.pausedHosts) {
+        const list = changes.pausedHosts.newValue || [];
+        const tabs = await api.tabs.query({});
+        for (const t of tabs) {
+          if (!t?.url || typeof t.id !== 'number') continue;
+          let host = null;
+          try { host = new URL(t.url).hostname.replace(/^www\./, ''); } catch {}
+          const shouldPause = Array.isArray(list) && !!host && list.includes(host);
+          await applyPauseAllowAllForTab(t.id, shouldPause);
+        }
+      }
+      if (changes.enabled && changes.enabled.newValue === false) {
+        // OFF global: retirer aussi rules strict session éventuelles
+        try {
+          const tabs = await api.tabs.query({});
+          for (const t of tabs) {
+            if (typeof t.id !== 'number') continue;
+            await api.declarativeNetRequest.updateSessionRules({ removeRuleIds: [500001,500002,500003, ALLOW_ALL_SESSION_ID], addRules: [] }, { tabId: t.id });
+          }
+        } catch {}
+      }
+    } catch (e) {
+      console.warn("PureBlock: storage.onChanged handler error", e);
+    }
+  });
+}
+
 api.runtime.onInstalled.addListener(ensureInitialState);
 api.runtime.onStartup.addListener(ensureInitialState);
 

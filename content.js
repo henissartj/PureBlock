@@ -105,8 +105,8 @@
   }
 
   async function startBlocking() {
-    const { pausedSites = {} } = await chrome.storage.local.get('pausedSites');
-    isPaused = !!pausedSites[domain];
+    const { pausedHosts = [] } = await chrome.storage.local.get('pausedHosts');
+    isPaused = Array.isArray(pausedHosts) && pausedHosts.includes(domain);
 
     if (isPaused) {
       resetInjectedStyles();
@@ -155,8 +155,30 @@
       startBlocking();
     }
   });
-
+  
   startBlocking();
+
+  // Réagit aux changements de stockage pour une pause fiable
+  if (chrome?.storage?.onChanged?.addListener) {
+    chrome.storage.onChanged.addListener(async (changes) => {
+      if (changes.pausedHosts) {
+        try {
+          const list = changes.pausedHosts.newValue || [];
+          const nowPaused = Array.isArray(list) && list.includes(domain);
+          if (nowPaused !== isPaused) {
+            isPaused = nowPaused;
+            if (isPaused) {
+              if (observer) observer.disconnect();
+              if (cleanupInterval) clearInterval(cleanupInterval);
+              resetInjectedStyles();
+            } else {
+              await startBlocking();
+            }
+          }
+        } catch {}
+      }
+    });
+  }
 })();
   function getRoots() {
     const roots = [];

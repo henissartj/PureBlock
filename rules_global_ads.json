@@ -37,4 +37,13 @@
   {"id":139,"priority":1,"action":{"type":"block"},"condition":{"urlFilter":"*://*.media.net/*","resourceTypes":["script","xmlhttprequest","image","media"]}},
   {"id":140,"priority":1,"action":{"type":"block"},"condition":{"urlFilter":"*://*.spotx.tv/*","resourceTypes":["script","xmlhttprequest","image","media"]}},
   {"id":141,"priority":1,"action":{"type":"block"},"condition":{"urlFilter":"*://*.googletagmanager.com/gtm.js*","resourceTypes":["script"]}}
+  ,
+  {"id":142,"priority":1,"action":{"type":"block"},"condition":{"urlFilter":"*://*.criteo.net/*","resourceTypes":["script","xmlhttprequest","image","media"]}},
+  {"id":143,"priority":1,"action":{"type":"block"},"condition":{"urlFilter":"*://*.mathtag.com/*","resourceTypes":["script","xmlhttprequest","image","media"]}},
+  {"id":144,"priority":1,"action":{"type":"block"},"condition":{"urlFilter":"*://*.bluekai.com/*","resourceTypes":["script","xmlhttprequest","image","media"]}},
+  {"id":145,"priority":1,"action":{"type":"block"},"condition":{"urlFilter":"*://*.rlcdn.com/*","resourceTypes":["script","xmlhttprequest","image","media"]}},
+  {"id":146,"priority":1,"action":{"type":"block"},"condition":{"urlFilter":"*://*.everesttech.net/*","resourceTypes":["script","xmlhttprequest","image","media"]}},
+  {"id":147,"priority":1,"action":{"type":"block"},"condition":{"urlFilter":"*://*.ads-twitter.com/*","resourceTypes":["script","xmlhttprequest","image","media"]}},
+  {"id":148,"priority":1,"action":{"type":"block"},"condition":{"urlFilter":"*://bat.bing.com/*","resourceTypes":["script","xmlhttprequest","image","media"]}},
+  {"id":149,"priority":1,"action":{"type":"block"},"condition":{"urlFilter":"*://*.2mdn.net/*","resourceTypes":["script","xmlhttprequest","image","media"]}}
 ]
