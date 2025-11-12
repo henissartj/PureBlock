@@ -84,7 +84,42 @@ async function applyUARule(mode) {
 }
 
 if (api.declarativeNetRequest?.onRuleMatchedDebug) {
-  api.declarativeNetRequest.onRuleMatchedDebug.addListener(async () => {
+  const tabCounters = new Map(); // tabId -> { count, windowStart }
+  const STRICT_THRESHOLD = 12;    // nombre d'événements règles dans la fenêtre
+  const WINDOW_MS = 30000;        // fenêtre glissante pour densité pub
+
+  async function applyStrictSessionRules(tabId, enable) {
+    try {
+      const strictRules = enable ? [
+        {
+          id: 500001,
+          priority: 2,
+          action: { type: "block" },
+          condition: { urlFilter: "*://*/*ad*", resourceTypes: ["script","xmlhttprequest","image","media"] }
+        },
+        {
+          id: 500002,
+          priority: 2,
+          action: { type: "block" },
+          condition: { urlFilter: "*://*/*advert*", resourceTypes: ["script","xmlhttprequest","image","media"] }
+        },
+        {
+          id: 500003,
+          priority: 2,
+          action: { type: "block" },
+          condition: { urlFilter: "*://*/*sponsor*", resourceTypes: ["script","xmlhttprequest","image","media"] }
+        }
+      ] : [];
+      await api.declarativeNetRequest.updateSessionRules({
+        removeRuleIds: [500001,500002,500003],
+        addRules: strictRules
+      }, { tabId });
+    } catch (e) {
+      console.warn("PureBlock: échec session strict rules", e);
+    }
+  }
+
+  api.declarativeNetRequest.onRuleMatchedDebug.addListener(async (info) => {
     try {
       const delta = 25 * 1024;
       const data = await api.storage.local.get(["blocked", "saved"]);
@@ -92,9 +127,67 @@ if (api.declarativeNetRequest?.onRuleMatchedDebug) {
         blocked: (data.blocked || 0) + 1,
         saved: (data.saved || 0) + delta
       });
+
+      // Profil par site auto‑adaptatif: bascule "strict" par onglet si densité élevée
+      const tabId = info?.request?.tabId;
+      if (typeof tabId === 'number' && tabId >= 0) {
+        const now = Date.now();
+        const state = tabCounters.get(tabId) || { count: 0, windowStart: now, strict: false };
+        // reset fenêtre si expirée
+        if (now - state.windowStart > WINDOW_MS) {
+          state.windowStart = now;
+          state.count = 0;
+        }
+        state.count += 1;
+
+        // Active strict si seuil atteint et pas déjà actif
+        if (!state.strict && state.count >= STRICT_THRESHOLD) {
+          await applyStrictSessionRules(tabId, true);
+          state.strict = true;
+          // Planifie une désactivation douce après la fenêtre suivante si activité baisse
+          setTimeout(async () => {
+            try {
+              const s = tabCounters.get(tabId);
+              if (!s) return;
+              // si pas de nouvelle explosion, relâche
+              if (Date.now() - s.windowStart > WINDOW_MS && s.count < STRICT_THRESHOLD / 2) {
+                await applyStrictSessionRules(tabId, false);
+                s.strict = false;
+              }
+            } catch {}
+          }, WINDOW_MS + 5000);
+        }
+
+        tabCounters.set(tabId, state);
+      }
     } catch {}
   });
 }
+
+// Enregistre dynamiquement un script de contenu pour Anti Cookie‑Wall / Overlay News
+(async function registerCookieWallContentScript() {
+  try {
+    const scripting = chrome.scripting;
+    if (!scripting?.registerContentScripts) return;
+    const id = "cookiewall";
+    let existing = [];
+    try {
+      existing = await scripting.getRegisteredContentScripts({ ids: [id] });
+    } catch {}
+    if (!existing || existing.length === 0) {
+      await scripting.registerContentScripts([
+        {
+          id,
+          js: ["stealth_cookiewall.js"],
+          matches: ["<all_urls>"],
+          runAt: "document_start"
+        }
+      ]);
+    }
+  } catch (e) {
+    console.warn("PureBlock: échec enregistrement content script cookiewall", e);
+  }
+})();
 
 api.runtime.onInstalled.addListener(ensureInitialState);
 api.runtime.onStartup.addListener(ensureInitialState);
