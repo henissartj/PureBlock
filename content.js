@@ -7,6 +7,7 @@
   let cleanPending = false;
   let adMuteApplied = false;
   let cosmeticsStyleEl = null;
+  let rootsObserver = null;
 
   const domain = location.hostname.replace(/^www\./, '');
 
@@ -116,18 +117,29 @@
     if (observer) observer.disconnect();
     if (cleanupInterval) clearInterval(cleanupInterval);
 
-    observer = new MutationObserver(throttledClean);
-    observer.observe(document.documentElement, { childList: true, subtree: true });
+    attachScopedObservers();
 
     applyCosmetic();
     handleAds();
     forcePremiumQuality();
   }
 
+  // Réattache sur navigation SPA YouTube
+  window.addEventListener('yt-navigate-finish', () => {
+    if (!isPaused) {
+      attachScopedObservers();
+      throttledClean();
+    }
+  }, { passive: true });
+
   function resetInjectedStyles() {
     if (cosmeticsStyleEl && cosmeticsStyleEl.parentNode) {
       cosmeticsStyleEl.parentNode.removeChild(cosmeticsStyleEl);
       cosmeticsStyleEl = null;
+    }
+    if (observer) {
+      try { observer.disconnect(); } catch {}
+      observer = null;
     }
   }
 
@@ -147,3 +159,29 @@
 
   startBlocking();
 })();
+  function getRoots() {
+    const roots = [];
+    const push = (sel) => {
+      const el = document.querySelector(sel);
+      if (el) roots.push(el);
+    };
+    push('ytd-app');
+    push('ytd-watch-flexy');
+    push('#content');
+    push('#primary');
+    push('.html5-video-player');
+    return roots.length ? roots : [document.documentElement];
+  }
+
+  function attachScopedObservers() {
+    if (observer) {
+      try { observer.disconnect(); } catch {}
+    }
+    observer = new MutationObserver(throttledClean);
+    const roots = getRoots();
+    for (const root of roots) {
+      try {
+        observer.observe(root, { childList: true, subtree: true });
+      } catch {}
+    }
+  }

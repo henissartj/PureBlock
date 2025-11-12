@@ -85,6 +85,18 @@ function observeAds() {
     subtree: true,
     attributes: false
   });
+
+  // Réduire la portée réelle d'observation aux conteneurs clés
+  try {
+    const roots = getRoots();
+    for (const root of roots) {
+      observer.observe(root, {
+        childList: true,
+        subtree: true,
+        attributes: false
+      });
+    }
+  } catch (e) {}
 }
 
 function stopObserver() {
@@ -157,6 +169,20 @@ function hookNavigationWake() {
       onUrlChange();
     } catch (e) {}
   }, { passive: true });
+}
+
+function getRoots() {
+  const roots = [];
+  const push = (sel) => {
+    const el = document.querySelector(sel);
+    if (el) roots.push(el);
+  };
+  push("ytd-app");
+  push("ytd-watch-flexy");
+  push("#content");
+  push("#primary");
+  push(".html5-video-player");
+  return roots;
 }
 
 function attachPlayerObserver() {
