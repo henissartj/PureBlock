@@ -89,29 +89,16 @@
     log(`Fallback → ${fallback}`);
   }
 
-  // Fallback menu
+  // Fallback menu supprimé: ne jamais cliquer sur l'UI du player
   function simulateMenu() {
-    if (!isEnabled) return;
-    const btn = document.querySelector('.ytp-settings-button');
-    if (!btn) return;
-
-    btn.click();
-    setTimeout(() => {
-      const items = Array.from(document.querySelectorAll('.ytp-quality-menu .ytp-menuitem'));
-      const order = ['4320p', '2160p', '1440p', '1080p Premium', '1080p'];
-      for (const qual of order) {
-        const found = items.find(i => (i.textContent||'').includes(qual));
-        if (found) { found.click(); log(`Menu → ${qual}`); break; }
-      }
-      setTimeout(() => btn.click(), 200);
-    }, 300);
+    /* no-op: ne touche plus au menu paramètres */
   }
 
   // Observer + intervalle
   const observer = new MutationObserver(() => {
     if (isEnabled) {
       forcePremiumQuality();
-      setTimeout(simulateMenu, 1000);
+      // ne pas appeler simulateMenu
     }
   });
 

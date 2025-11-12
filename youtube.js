@@ -115,6 +115,7 @@ function isAudioResponse(url, res){
 // Anti‑pub: assainir les réponses player et la variable ytInitialPlayerResponse
 initAdResponseSanitizer();
 initXHRAdSanitizer();
+initBeaconKiller();
 
 function initAdResponseSanitizer() {
   try {
@@ -198,6 +199,28 @@ function initAdResponseSanitizer() {
         } catch (e) {}
       }, 1200);
     }
+  } catch (e) {}
+}
+
+// Bloque les beacons publicitaires (sendBeacon) vers pagead/doubleclick/googlesyndication/googleads
+function initBeaconKiller(){
+  try {
+    const orig = navigator.sendBeacon;
+    if (typeof orig !== 'function' || orig.__pbWrapped) return;
+    const blocked = /(pagead|doubleclick|googlesyndication|googleads)/i;
+    const wrapped = function(url, data){
+      try {
+        const u = typeof url === 'string' ? url : (url && url.toString()) || '';
+        if (!enabled) return orig.apply(this, arguments);
+        if (blocked.test(u)) {
+          // on simule le succès sans rien envoyer
+          return true;
+        }
+      } catch (e) {}
+      return orig.apply(this, arguments);
+    };
+    wrapped.__pbWrapped = true;
+    navigator.sendBeacon = wrapped;
   } catch (e) {}
 }
 
@@ -917,13 +940,20 @@ function handlePlayerAds() {
     return;
   }
 
-  // Si pas de bouton skip, on reste minimal: mute sans modifier la vitesse
+  // Mode strict invisible: si pas de bouton skip, on mute et on accélère fortement
   try {
-    if (!boostedPlayback) {
+    // Mémorise état mute initial
+    if (prevMuted === null) {
       prevMuted = video.muted;
-      video.muted = true;
-      boostedPlayback = true;
     }
+    // Force mute pendant la pub
+    video.muted = true;
+    // Accélère la lecture pour écourter la pub sans toucher à l'UI
+    // Valeur sûre et stable côté navigateur: 16x
+    if (video.playbackRate < 15) {
+      video.playbackRate = 16;
+    }
+    boostedPlayback = true;
   } catch (e) {}
   window.__pbLastWasAd = true;
   // Ne pas ajouter d'overlay personnalisé: on vise l'éradication en amont.
