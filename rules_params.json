@@ -1,0 +1,5 @@
+[
+  {"id":301,"priority":3,"action":{"type":"redirect","redirect":{"transform":{"queryTransform":{"removeParams":["utm_source","utm_medium","utm_campaign","utm_term","utm_content","utm_id","utm_name","utm_creative","utm_referrer","utm_social","utm_social-type"]}}}},"condition":{"regexFilter":".+","resourceTypes":["main_frame","sub_frame","xmlhttprequest"]}},
+  {"id":302,"priority":3,"action":{"type":"redirect","redirect":{"transform":{"queryTransform":{"removeParams":["gclid","fbclid","yclid","mc_eid","vero_id","ref"]}}}},"condition":{"regexFilter":".+","resourceTypes":["main_frame","sub_frame","xmlhttprequest"]}}
+]
+

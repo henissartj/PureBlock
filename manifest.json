@@ -48,6 +48,11 @@
         "id": "global-ads-rules",
         "enabled": true,
         "path": "rules_global_ads.json"
+      },
+      {
+        "id": "param-scrubber-rules",
+        "enabled": true,
+        "path": "rules_params.json"
       }
     ]
   },
@@ -96,7 +101,9 @@
         "youtube.js",
         "stealth.js",
         "content.js",
-        "rules_yt_ads.json"
+        "rules_yt_ads.json",
+        "assets/empty.js",
+        "assets/empty.json"
       ],
       "matches": [
         "<all_urls>"
