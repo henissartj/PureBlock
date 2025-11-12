@@ -118,8 +118,6 @@ document.getElementById('premium-toggle').addEventListener('change', (e) => {
   const premium1080 = e.target.checked;
   api.storage.local.set({ premium1080 });
   api.runtime.sendMessage({ action: 'updatePremium', premium1080 });
-  const badge = document.getElementById('premium-badge');
-  if (badge) badge.style.opacity = premium1080 ? '0.9' : '0.3';
 });
 
 // Pause on this site
