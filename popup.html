@@ -259,31 +259,7 @@
       filter:grayscale(0.1);
     }
 
-    /* Aurora animée fluide en arrière-plan */
-    body::before{
-      content:"";
-      position:absolute;
-      inset:-10% -10% -10% -10%;
-      pointer-events:none;
-      z-index:0;
-      opacity:.18;
-      filter:blur(14px);
-      background:
-        radial-gradient(120% 80% at 0% 0%, rgba(160,216,255,0.20) 0%, rgba(160,216,255,0.0) 60%),
-        radial-gradient(100% 80% at 100% 100%, rgba(224,195,252,0.18) 0%, rgba(224,195,252,0.0) 60%),
-        linear-gradient(120deg, rgba(160,216,255,0.08), rgba(224,195,252,0.08));
-      transform:translate3d(0,0,0);
-      animation: auroraFlow 22s ease-in-out infinite;
-    }
-    @keyframes auroraFlow {
-      0%   { transform: translate(-10px,-6px) rotate(0deg); opacity:.16; }
-      25%  { transform: translate(8px,6px) rotate(1deg);  opacity:.18; }
-      50%  { transform: translate(12px,-4px) rotate(2deg); opacity:.20; }
-      75%  { transform: translate(-6px,8px) rotate(1deg); opacity:.18; }
-      100% { transform: translate(-10px,-6px) rotate(0deg); opacity:.16; }
-    }
-    .container > *{ position:relative; z-index:1; }
-    body.off::before{ opacity:.10; }
+    /* (Aurora de fond retirée) */
   </style>
 </head>
 <body>

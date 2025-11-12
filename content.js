@@ -43,7 +43,6 @@
 
     const isAd = document.body.querySelector('.ad-showing, .ad-interrupting');
     if (isAd) {
-      video.playbackRate = 16;
       if (!adMuteApplied) {
         video.muted = true;
         adMuteApplied = true;

@@ -328,23 +328,12 @@ function handlePlayerAds() {
     return;
   }
 
-  // Si pas de bouton skip, on réduit un peu la douleur en avançant légèrement
+  // Si pas de bouton skip, on reste minimal: mute sans modifier la vitesse
   try {
-    // Boost ad speed and mute to reduce pain and black screen duration
     if (!boostedPlayback) {
       prevMuted = video.muted;
       video.muted = true;
-      video.playbackRate = Math.min(Math.max(video.playbackRate || 1, 2), 4);
       boostedPlayback = true;
-    }
-    const remaining = (video.duration || 0) - (video.currentTime || 0);
-    if (remaining > 5 && remaining < 15) {
-      video.currentTime = Math.min(
-        video.duration || video.currentTime + 2,
-        (video.currentTime || 0) + 2
-      );
-      lastAdTs = Date.now();
-      reportBlocked(1, 50 * 1024);
     }
   } catch (e) {}
 }
