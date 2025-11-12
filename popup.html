@@ -9,17 +9,17 @@
     *{margin:0;padding:0;box-sizing:border-box}
     body{
       width:320px;
-      height:480px;
+      height:420px;
       background:linear-gradient(135deg,#0f0f1a 0%,#1a1a2e 100%);
       color:#e0e0ff;
       font-family:'Inter',sans-serif;
       overflow:hidden;
       user-select:none;
-      transition:all .4s ease;
+      transition:all .3s ease;
       position:relative;
     }
     .container{
-      padding:32px 24px;
+      padding:24px 20px;
       text-align:center;
       height:100%;
       display:flex;
@@ -30,32 +30,32 @@
     h1{
       font-family:'Space Grotesk',sans-serif;
       font-weight:600;
-      font-size:28px;
-      letter-spacing:-.5px;
+      font-size:24px;
+      letter-spacing:-.4px;
       background:linear-gradient(90deg,#a0d8ff,#e0c3fc);
       -webkit-background-clip:text;
       color:transparent;
       -webkit-text-fill-color:transparent;
-      margin-bottom:4px;
+      margin-bottom:2px;
     }
     .slogan{
-      font-size:13px;
+      font-size:12px;
       color:#a0a0cc;
       font-weight:300;
-      letter-spacing:1px;
-      margin-bottom:24px;
+      letter-spacing:.8px;
+      margin-bottom:16px;
     }
 
     .toggle-container{
       display:flex;
       justify-content:center;
-      margin:12px 0 8px;
+      margin:8px 0 6px;
     }
     #checkbox{display:none}
     .switch{
       position:relative;
-      width:70px;
-      height:70px;
+      width:56px;
+      height:56px;
       background-color:rgb(99,99,99);
       border-radius:50%;
       cursor:pointer;
@@ -63,19 +63,16 @@
       align-items:center;
       justify-content:center;
       border:2px solid rgb(126,126,126);
-      box-shadow:0 0 3px rgb(2,2,2) inset;
-      transition:all .5s cubic-bezier(.25,.8,.25,1);
+      box-shadow:0 0 2px rgb(2,2,2) inset;
+      transition:all .4s cubic-bezier(.25,.8,.25,1);
     }
     .switch svg{width:1.2em;transition:all .3s}
     .switch svg path{fill:rgb(48,48,48);transition:fill .3s}
     #checkbox:checked + .switch{
       box-shadow:0 0 1px rgb(151,243,255) inset,
-                 0 0 2px rgb(151,243,255) inset,
-                 0 0 10px rgb(151,243,255) inset,
-                 0 0 40px rgb(151,243,255),
-                 0 0 100px rgb(151,243,255),
-                 0 0 5px rgb(151,243,255);
-      border:2px solid #fff;
+                 0 0 6px rgba(151,243,255,0.5),
+                 0 0 12px rgba(151,243,255,0.35);
+      border:2px solid #e6f9ff;
       background-color:rgb(146,180,184);
     }
     #checkbox:checked + .switch svg{
@@ -86,7 +83,7 @@
     /* Badge 1080p supprimé */
 
     .premium-toggle{
-      margin:12px 0 4px;
+      margin:8px 0 4px;
       text-align:left;
       font-size:11px;
       color:#9fa0c8;
@@ -107,7 +104,7 @@
 
     .options{
       text-align:left;
-      margin:12px 0 4px;
+      margin:8px 0 4px;
       font-size:12px;
       color:#a0a0cc;
     }
@@ -122,13 +119,13 @@
       background:rgba(255,255,255,.06);
       border:1px solid #444466;
       color:#e0e0ff;
-      padding:8px 32px 8px 12px;
+      padding:6px 30px 6px 10px;
       border-radius:8px;
       font-size:13px;
       font-family:'Inter',sans-serif;
       width:100%;
       cursor:pointer;
-      transition:all .3s ease;
+      transition:all .2s ease;
       outline:none;
       background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23a0d8ff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
       background-repeat:no-repeat;
@@ -155,7 +152,7 @@
       align-items:center;
       gap:8px;
       cursor:pointer;
-      margin-top:6px;
+      margin-top:4px;
       font-size:11px;
       color:#9fa0c8;
     }
@@ -167,7 +164,7 @@
     .stats{
       display:flex;
       justify-content:space-around;
-      margin:24px 0 12px;
+      margin:12px 0 10px;
       font-family:'Space Grotesk',sans-serif;
     }
     .stat{text-align:center}
@@ -186,7 +183,7 @@
     }
 
     .pause-site-container{
-      margin:12px 0 4px;
+      margin:8px 0 4px;
       text-align:center;
       display:flex;
       justify-content:center;
@@ -195,11 +192,11 @@
     .btn{
       border:none;
       border-radius:8px;
-      padding:8px 14px;
+      padding:6px 12px;
       font-size:11px;
       cursor:pointer;
       font-family:'Inter',sans-serif;
-      transition:all .3s ease;
+      transition:all .2s ease;
       backdrop-filter:blur(8px);
       display:inline-flex;
       align-items:center;
@@ -217,19 +214,13 @@
       border-color:rgba(255,111,111,0.4);
       color:#ffb3b3;
     }
-    #pause-site-btn:hover{
-      transform:translateY(-1px);
-      box-shadow:0 4px 10px rgba(0,0,0,0.25);
-    }
+    #pause-site-btn:hover{transform:translateY(-1px);box-shadow:0 3px 8px rgba(0,0,0,0.2)}
     #refresh-btn{
       background:rgba(255,255,255,0.08);
       border:1px solid rgba(255,255,255,0.15);
       color:#a0d8ff;
     }
-    #refresh-btn:hover{
-      transform:translateY(-1px);
-      box-shadow:0 4px 10px rgba(0,0,0,0.22);
-    }
+    #refresh-btn:hover{transform:translateY(-1px);box-shadow:0 3px 8px rgba(0,0,0,0.2)}
 
     .footer{
       font-size:9px;
@@ -277,35 +268,7 @@
         </label>
       </div>
 
-      <!-- PREMIUM TOGGLE -->
-      <div class="premium-toggle">
-        <label>
-          <input type="checkbox" id="premium-toggle" />
-          <span>Forcer l'expérience YouTube Premium-friendly (1080p & confort)</span>
-        </label>
-      </div>
-
-      <!-- OPTIONS -->
-      <div class="options">
-        <label for="ua-select">User-Agent YouTube :</label>
-        <select id="ua-select">
-          <option value="random">Aléatoire (sûr)</option>
-          <option value="chrome">Chrome Desktop</option>
-          <option value="firefox">Firefox Desktop</option>
-          <option value="safari">Safari Desktop</option>
-          <option value="chrome-mobile">Chrome Mobile</option>
-          <option value="firefox-mobile">Firefox Mobile</option>
-          <option value="safari-mobile">Safari Mobile</option>
-        </select>
-      </div>
-
-      <!-- ALERT ANTI-ADB -->
-      <div class="alert-toggle">
-        <input type="checkbox" id="alert-checkbox" checked />
-        <label for="alert-checkbox">M'avertir si YouTube détecte un bloqueur.</label>
-      </div>
-
-      <!-- STATS -->
+      <!-- STATS (remontées sous ON/OFF) -->
       <div class="stats">
         <div class="stat">
           <span id="blocked-count">0</span>
@@ -316,6 +279,29 @@
           <p>KB ÉCONOMISÉS</p>
         </div>
       </div>
+
+      <!-- PREMIUM TOGGLE -->
+      <div class="premium-toggle">
+        <label>
+          <input type="checkbox" id="premium-toggle" />
+          <span>Forcer l'expérience YouTube Premium-friendly (1080p & confort)</span>
+        </label>
+      </div>
+
+      <!-- OPTIONS + ALERT en ligne -->
+      <div class="settings-row">
+        <div class="options">
+          <label for="ua-select">User-Agent YouTube :</label>
+          <select id="ua-select">
+            <option value="random">Aléatoire (sûr)</option>
+            <option value="chrome">Chrome Desktop</option>
+            <option value="firefox">Firefox Desktop</option>
+            <option value="safari">Safari Desktop</option>
+            <option value="chrome-mobile">Chrome Mobile</option>
+            <option value="firefox-mobile">Firefox Mobile</option>
+            <option value="safari-mobile">Safari Mobile</option>
+          </select>
+        </div>
 
       <!-- PAUSE / REFRESH -->
       <div class="pause-site-container">
@@ -335,3 +321,18 @@
   <script src="popup.js"></script>
 </body>
 </html>
+    /* Nouvelle rangée de réglages: UA + alerte côte à côte */
+    .settings-row{
+      display:flex;
+      align-items:flex-end;
+      gap:12px;
+      margin:12px 0 8px;
+    }
+    .settings-row .options,
+    .settings-row .alert-toggle{
+      flex:1;
+      margin:0;
+    }
+    @media (max-width: 340px){
+      .settings-row{flex-direction:column;align-items:stretch;gap:8px}
+    }
