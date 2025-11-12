@@ -18,6 +18,10 @@
   {"id":117,"priority":1,"action":{"type":"block"},"condition":{"urlFilter":"*://pagead2.googlesyndication.com/*","resourceTypes":["script","xmlhttprequest"]}},
   {"id":118,"priority":1,"action":{"type":"block"},"condition":{"urlFilter":"*://tpc.googlesyndication.com/*","resourceTypes":["script","image"]}}
   ,
+  {"id":119,"priority":1,"action":{"type":"block"},"condition":{"urlFilter":"*://adservice.google.fr/*","resourceTypes":["script","xmlhttprequest","image","media"]}},
+  {"id":120,"priority":1,"action":{"type":"block"},"condition":{"urlFilter":"*://adservice.google.*/*","resourceTypes":["script","xmlhttprequest","image","media"]}},
+  {"id":121,"priority":1,"action":{"type":"block"},"condition":{"urlFilter":"*://pagead-googlehosted.l.google.com/*","resourceTypes":["script","xmlhttprequest"]}},
+  {"id":122,"priority":1,"action":{"type":"block"},"condition":{"urlFilter":"*://googleads4.g.doubleclick.net/*","resourceTypes":["script","xmlhttprequest","image","media"]}},
   {"id":201,"priority":2,"action":{"type":"redirect","redirect":{"extensionPath":"/assets/empty.js"}},"condition":{"urlFilter":"*://imasdk.googleapis.com/*","resourceTypes":["script"]}},
   {"id":202,"priority":2,"action":{"type":"redirect","redirect":{"extensionPath":"/assets/empty.json"}},"condition":{"urlFilter":"*://imasdk.googleapis.com/*","resourceTypes":["xmlhttprequest"]}},
   {"id":203,"priority":2,"action":{"type":"redirect","redirect":{"extensionPath":"/assets/empty.js"}},"condition":{"urlFilter":"*://pubads.g.doubleclick.net/*","resourceTypes":["script"]}},
@@ -26,6 +30,8 @@
   {"id":206,"priority":2,"action":{"type":"redirect","redirect":{"extensionPath":"/assets/empty.js"}},"condition":{"urlFilter":"*://pagead2.googlesyndication.com/*","resourceTypes":["script"]}},
   {"id":207,"priority":2,"action":{"type":"redirect","redirect":{"extensionPath":"/assets/empty.json"}},"condition":{"urlFilter":"*://pagead2.googlesyndication.com/*","resourceTypes":["xmlhttprequest"]}}
   ,
+  {"id":208,"priority":2,"action":{"type":"redirect","redirect":{"extensionPath":"/assets/empty.js"}},"condition":{"urlFilter":"*://securepubads.g.doubleclick.net/*","resourceTypes":["script"]}},
+  {"id":209,"priority":2,"action":{"type":"redirect","redirect":{"extensionPath":"/assets/empty.js"}},"condition":{"urlFilter":"*://adservice.google.*/*","resourceTypes":["script"]}},
   {"id":131,"priority":1,"action":{"type":"block"},"condition":{"urlFilter":"*://*.adnxs.com/*","resourceTypes":["script","xmlhttprequest","image","media"]}},
   {"id":132,"priority":1,"action":{"type":"block"},"condition":{"urlFilter":"*://*.moatads.com/*","resourceTypes":["script","xmlhttprequest","image","media"]}},
   {"id":133,"priority":1,"action":{"type":"block"},"condition":{"urlFilter":"*://*.serving-sys.com/*","resourceTypes":["script","xmlhttprequest","image","media"]}},

@@ -96,32 +96,15 @@
     const player = document.getElementById('movie_player');
     if (!player || typeof player.getAvailableQualityLevels !== 'function') return;
 
-    try {
-      const available = player.getAvailableQualityLevels();
-      if (!available || !available.length) return;
+    const available = player.getAvailableQualityLevels();
+    if (!available || !available.length) return;
 
-      const preferred = ['hd2160', 'hd1080pPremium', 'hd1080'];
-      for (const quality of preferred) {
-        if (available.includes(quality)) {
-          player.setPlaybackQuality(quality);
-          return;
-        }
+    const preferred = ['hd2160', 'hd1080pPremium', 'hd1080'];
+    for (const quality of preferred) {
+      if (available.includes(quality)) {
+        player.setPlaybackQuality(quality);
+        break;
       }
-    } catch {
-      const settings = document.querySelector('.ytp-settings-button');
-      if (!settings) return;
-      settings.click();
-      setTimeout(() => {
-        const labels = document.querySelectorAll('.ytp-quality-menu .ytp-menuitem-label');
-        for (const label of labels) {
-          const txt = label.textContent.toLowerCase();
-          if (txt.includes('1080p premium') || txt.includes('2160p') || txt.includes('1080p')) {
-            label.closest('.ytp-menuitem')?.click();
-            break;
-          }
-        }
-        settings.click();
-      }, 200);
     }
   }
 

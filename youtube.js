@@ -876,6 +876,9 @@ function handlePlayerAds() {
     document.querySelector(".ytp-ad-player-overlay") ||
     document.querySelector(".ytp-ad-module");
 
+  // Mémoire d'état pub pour éviter d'interférer avec l'UI (ex: menu paramètres)
+  window.__pbLastWasAd = window.__pbLastWasAd || false;
+
   if (!isAd) {
     // Retirer overlay skip si présent
     const overlay = player.querySelector('.pureblock-skip-overlay');
@@ -892,9 +895,12 @@ function handlePlayerAds() {
         video.muted = prevMuted;
         prevMuted = null;
       }
-      // Ensure video plays promptly after ad ends
-      video.play?.();
+      // Reprendre la lecture uniquement si on sort d'un état pub
+      if (window.__pbLastWasAd) {
+        video.play?.();
+      }
     } catch (e) {}
+    window.__pbLastWasAd = false;
     return;
   }
 
@@ -908,6 +914,7 @@ function handlePlayerAds() {
     // estimation : durée vidéo * 50KB "économisés"
     const est = Math.floor(video.duration || 5) * 50 * 1024;
     reportBlocked(1, est);
+    window.__pbLastWasAd = true;
     return;
   }
 
@@ -919,6 +926,7 @@ function handlePlayerAds() {
       boostedPlayback = true;
     }
   } catch (e) {}
+  window.__pbLastWasAd = true;
   // Ne pas ajouter d'overlay personnalisé: on vise l'éradication en amont.
 }
 // Suppression de l’overlay personnalisé: aucune modification d’UI n’est injectée.
