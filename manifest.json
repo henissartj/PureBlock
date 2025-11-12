@@ -27,6 +27,7 @@
     "declarativeNetRequestFeedback",
     "scripting",
     "tabs"
+    
   ],
   "host_permissions": [
     "*://*.youtube.com/*",

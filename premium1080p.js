@@ -4,11 +4,15 @@
 
   const QUALITY_MAP = {
     off: null,
+    '720p': 'hd720',
     '1080p': 'hd1080',
+    '1440p': 'hd1440',
     '2160p': 'hd2160',
+    '4320p': 'hd4320',
     auto: 'auto'
   };
-  const CHECK_INTERVAL = 1500;
+  const PREFERENCE = ['hd4320', 'hd2880', 'hd2160', 'hd1440', 'hd1080pPremium', 'hd1080', 'hd720', 'large', 'medium'];
+  const CHECK_INTERVAL = 1200;
   let isEnabled = true; // piloté par premium1080
   let targetQuality = 'auto';
 
@@ -56,18 +60,16 @@
       return;
     }
 
-    // Auto premium-friendly: privilégie 1080p Premium si dispo, sinon meilleure qualité
+    // Auto agressif: privilégie la résolution/bitrate maximal disponible
     if (targetQuality === 'auto') {
-      if (qualities.includes('hd1080pPremium')) {
-        player.setPlaybackQualityRange('hd1080pPremium');
-        player.setPlaybackQuality('hd1080pPremium');
-        log('1080p Premium activé (auto)');
-        return;
+      let best = null;
+      for (const pref of PREFERENCE) {
+        if (qualities.includes(pref)) { best = pref; break; }
       }
-      const best = qualities[0];
+      if (!best) best = qualities[0];
       player.setPlaybackQualityRange(best);
       player.setPlaybackQuality(best);
-      log(`Auto → ${best}`);
+      log(`Auto (agressif) → ${best}`);
       return;
     }
 
@@ -95,14 +97,11 @@
 
     btn.click();
     setTimeout(() => {
-      const items = document.querySelectorAll('.ytp-quality-menu .ytp-menuitem');
-      for (const item of items) {
-        const text = item.textContent || '';
-        if (text.includes('1080p') || text.includes('Premium') || text.includes('2160p')) {
-          item.click();
-          log(`Menu → ${text}`);
-          break;
-        }
+      const items = Array.from(document.querySelectorAll('.ytp-quality-menu .ytp-menuitem'));
+      const order = ['4320p', '2160p', '1440p', '1080p Premium', '1080p'];
+      for (const qual of order) {
+        const found = items.find(i => (i.textContent||'').includes(qual));
+        if (found) { found.click(); log(`Menu → ${qual}`); break; }
       }
       setTimeout(() => btn.click(), 200);
     }, 300);
@@ -117,6 +116,13 @@
   });
 
   observer.observe(document.body, { childList: true, subtree: true });
+
+  // Réappliquer après navigation interne YouTube
+  window.addEventListener('yt-navigate-finish', () => {
+    if (isEnabled) {
+      setTimeout(() => { forcePremiumQuality(); simulateMenu(); }, 800);
+    }
+  }, { passive: true });
 
   setInterval(() => {
     if (isEnabled) forcePremiumQuality();
