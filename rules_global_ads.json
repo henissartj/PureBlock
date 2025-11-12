@@ -15,7 +15,7 @@
   {"id":114,"priority":1,"action":{"type":"block"},"condition":{"urlFilter":"*://securepubads.g.doubleclick.net/*","resourceTypes":["script","xmlhttprequest","image","media","ping"]}},
   {"id":115,"priority":1,"action":{"type":"block"},"condition":{"urlFilter":"*://pubads.g.doubleclick.net/*","resourceTypes":["script","xmlhttprequest","image","media","ping"]}},
   {"id":116,"priority":1,"action":{"type":"block"},"condition":{"urlFilter":"*://imasdk.googleapis.com/*","resourceTypes":["script","xmlhttprequest"]}},
-  {"id":117,"priority":1,"action":{"type":"block"},"condition":{"urlFilter":"*://pagead2.googlesyndication.com/*","resourceTypes":["script","xmlhttprequest","ping"]}},
+  {"id":117,"priority":1,"action":{"type":"block"},"condition":{"urlFilter":"*://pagead2.googlesyndication.com/*","resourceTypes":["script","xmlhttprequest","image","ping","sub_frame","other"]}},
   {"id":118,"priority":1,"action":{"type":"block"},"condition":{"urlFilter":"*://tpc.googlesyndication.com/*","resourceTypes":["script","image"]}}
   ,
   {"id":119,"priority":1,"action":{"type":"block"},"condition":{"urlFilter":"*://adservice.google.fr/*","resourceTypes":["script","xmlhttprequest","image","media"]}},
@@ -24,7 +24,7 @@
   {"id":122,"priority":1,"action":{"type":"block"},"condition":{"urlFilter":"*://googleads4.g.doubleclick.net/*","resourceTypes":["script","xmlhttprequest","image","media"]}},
   {"id":123,"priority":1,"action":{"type":"block"},"condition":{"urlFilter":"*://ade.googlesyndication.com/*","resourceTypes":["script","xmlhttprequest","image","media"]}},
 
-  {"id":149,"priority":1,"action":{"type":"block"},"condition":{"urlFilter":"*://*.google.com/pagead/*","resourceTypes":["script","xmlhttprequest","image","ping"]}},
+  {"id":150,"priority":1,"action":{"type":"block"},"condition":{"urlFilter":"*://*.google.com/pagead/*","resourceTypes":["script","xmlhttprequest","image","ping","sub_frame","other"]}},
   {"id":201,"priority":2,"action":{"type":"redirect","redirect":{"extensionPath":"/assets/empty.js"}},"condition":{"urlFilter":"*://imasdk.googleapis.com/*","resourceTypes":["script"]}},
   {"id":202,"priority":2,"action":{"type":"redirect","redirect":{"extensionPath":"/assets/empty.json"}},"condition":{"urlFilter":"*://imasdk.googleapis.com/*","resourceTypes":["xmlhttprequest"]}},
   {"id":203,"priority":2,"action":{"type":"redirect","redirect":{"extensionPath":"/assets/empty.js"}},"condition":{"urlFilter":"*://pubads.g.doubleclick.net/*","resourceTypes":["script"]}},

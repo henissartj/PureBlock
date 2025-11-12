@@ -116,6 +116,7 @@ function isAudioResponse(url, res){
 initAdResponseSanitizer();
 initXHRAdSanitizer();
 initBeaconKiller();
+initImagePixelGuard();
 
 function initAdResponseSanitizer() {
   try {
@@ -126,6 +127,14 @@ function initAdResponseSanitizer() {
         const url = (typeof input === 'string') ? input : (input && input.url) || '';
         // Global OFF → ne rien modifier, renvoyer fetch original
         if (!enabled) return origFetch(input, init);
+        // Hard-block côté page pour endpoints publicitaires (complément DNR)
+        try {
+          const u = String(url || '');
+          if (/pagead|doubleclick|googlesyndication|googleads\.g\.doubleclick\.net/i.test(u)) {
+            // Répond un 204 vide pour éviter erreurs côté page
+            return new Response('', { status: 204, statusText: 'No Content', headers: new Headers({ 'content-type': 'text/plain' }) });
+          }
+        } catch (e) {}
         // Objectif A/C: limiter bursts sur googlevideo et réduire prébuffer
         const isGV = typeof url === 'string' && url.includes('googlevideo.com/videoplayback');
         if (isGV) {
@@ -198,6 +207,39 @@ function initAdResponseSanitizer() {
           }
         } catch (e) {}
       }, 1200);
+    }
+  } catch (e) {}
+}
+
+// Bloque les pixels image vers domaines publicitaires (pagead/doubleclick/googlesyndication/googleads)
+function initImagePixelGuard(){
+  try {
+    const blocked = /(pagead|doubleclick|googlesyndication|googleads)/i;
+    const proto = HTMLImageElement && HTMLImageElement.prototype;
+    if (!proto) return;
+    const desc = Object.getOwnPropertyDescriptor(proto, 'src');
+    if (desc && !desc.__pbWrapped) {
+      const origGet = desc.get;
+      const origSet = desc.set;
+      const wrapped = {
+        get: function(){
+          try { return origGet.call(this); } catch(e){ return ''; }
+        },
+        set: function(val){
+          try {
+            const u = String(val || '');
+            if (enabled && blocked.test(u)) {
+              // Ignore le pixel pub
+              return;
+            }
+          } catch (e) {}
+          try { return origSet.call(this, val); } catch(e) { /* noop */ }
+        },
+        configurable: true,
+        enumerable: true
+      };
+      Object.defineProperty(proto, 'src', wrapped);
+      wrapped.__pbWrapped = true;
     }
   } catch (e) {}
 }

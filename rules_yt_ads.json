@@ -23,7 +23,7 @@
     "action": { "type": "block" },
     "condition": {
       "urlFilter": "*pagead/*",
-      "resourceTypes": ["script", "xmlhttprequest", "image", "media", "ping"]
+      "resourceTypes": ["script", "xmlhttprequest", "image", "media", "ping", "sub_frame", "other"]
     }
   },
   {
@@ -114,7 +114,7 @@
     "action": { "type": "block" },
     "condition": {
       "urlFilter": "*://*.youtube.com/pagead/*",
-      "resourceTypes": ["xmlhttprequest", "script", "image", "ping"]
+      "resourceTypes": ["xmlhttprequest", "script", "image", "ping", "sub_frame", "other"]
     }
   },
   {
