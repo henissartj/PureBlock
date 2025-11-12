@@ -603,7 +603,6 @@ function bootstrap() {
   initPreloadGuard();
   observeAds();
   attachPlayerObserver();
-  try { document.querySelector('video')?.play?.(); } catch (_) {}
   safeClean();
   hookNavigationWake();
   injectDownloadButton();
