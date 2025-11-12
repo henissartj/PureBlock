@@ -7,6 +7,8 @@ let playerObserver = null;
 let idleScheduled = false;
 let sleeping = false;
 let lastAdTs = Date.now();
+let prevMuted = null;
+let boostedPlayback = false;
 
 const SLEEP_AFTER_MS = 3 * 60 * 1000; // 3 minutes d'inactivité pub
 
@@ -52,6 +54,7 @@ function bootstrap() {
   initPreloadGuard();
   observeAds();
   attachPlayerObserver();
+  try { document.querySelector('video')?.play?.(); } catch (_) {}
   safeClean();
   hookNavigationWake();
 }
@@ -256,6 +259,7 @@ function hideStaticAds() {
     ".ytd-promoted-video-renderer",
     ".ytp-ad-overlay-container",
     ".ytp-ad-image-overlay",
+    ".ytp-ad-player-overlay",
     "#player-ads",
     ".ytp-ad-module",
     "ytd-companion-slot-renderer",
@@ -294,7 +298,22 @@ function handlePlayerAds() {
     document.querySelector(".ytp-ad-player-overlay") ||
     document.querySelector(".ytp-ad-module");
 
-  if (!isAd) return;
+  if (!isAd) {
+    // Revert any ad-time tweaks for fluidity
+    try {
+      if (boostedPlayback && video.playbackRate !== 1) {
+        video.playbackRate = 1;
+      }
+      boostedPlayback = false;
+      if (prevMuted !== null) {
+        video.muted = prevMuted;
+        prevMuted = null;
+      }
+      // Ensure video plays promptly after ad ends
+      video.play?.();
+    } catch (e) {}
+    return;
+  }
 
   const skipBtn =
     document.querySelector(".ytp-ad-skip-button") ||
@@ -311,6 +330,13 @@ function handlePlayerAds() {
 
   // Si pas de bouton skip, on réduit un peu la douleur en avançant légèrement
   try {
+    // Boost ad speed and mute to reduce pain and black screen duration
+    if (!boostedPlayback) {
+      prevMuted = video.muted;
+      video.muted = true;
+      video.playbackRate = Math.min(Math.max(video.playbackRate || 1, 2), 4);
+      boostedPlayback = true;
+    }
     const remaining = (video.duration || 0) - (video.currentTime || 0);
     if (remaining > 5 && remaining < 15) {
       video.currentTime = Math.min(

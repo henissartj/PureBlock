@@ -143,3 +143,12 @@ document.getElementById('refresh-btn').addEventListener('click', () => {
     }
   });
 });
+
+// Open Options page
+document.getElementById('options-btn').addEventListener('click', () => {
+  if (api.runtime?.openOptionsPage) {
+    api.runtime.openOptionsPage();
+  } else {
+    api.tabs.create({ url: 'options.html' });
+  }
+});
