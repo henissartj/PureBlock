@@ -12,7 +12,8 @@ function normalizeChannelIdOrUrl(input) {
   try {
     if (input.startsWith('http')) {
       const url = new URL(input);
-      if (url.hostname.includes('youtube.com')) {
+      const allowedYoutubeHosts = ['youtube.com', 'www.youtube.com'];
+      if (allowedYoutubeHosts.includes(url.hostname)) {
         if (url.pathname.startsWith('/channel/')) {
           return url.pathname.replace('/channel/', '').split('/')[0];
         }
