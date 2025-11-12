@@ -314,3 +314,49 @@ async function syncEnabledRulesetForTab(tabId, enabled) {
   // Sinon, applique normalement
   await syncEnabledRuleset(enabled);
 }
+// Register cross-site content script for adaptive ad detection at runtime
+try {
+  chrome.scripting && chrome.scripting.registerContentScripts?.([
+    {
+      id: 'ad_detect_all',
+      matches: ['<all_urls>'],
+      js: ['ad_detect.js'],
+      runAt: 'document_start'
+    }
+  ]).catch(() => {});
+} catch {}
+
+// Stats and reporting from content scripts
+try {
+  chrome.runtime.onMessage.addListener((msg, sender) => {
+    if (!msg) return;
+    if (msg.type === 'blocked') {
+      // Increment global counter
+      chrome.storage.local.get(['blockedCountGlobal']).then(({ blockedCountGlobal = 0 }) => {
+        chrome.storage.local.set({ blockedCountGlobal: blockedCountGlobal + 1 });
+      });
+    }
+    if (msg.type === 'ad_report') {
+      const report = { url: msg.url, nodes: msg.nodes, ts: Date.now() };
+      chrome.storage.local.get(['adReports']).then(({ adReports = [] }) => {
+        adReports.unshift(report);
+        adReports.splice(1000); // bound size
+        chrome.storage.local.set({ adReports });
+      });
+    }
+  });
+} catch {}
+
+// Optional: periodic maintenance via alarms for future list updates
+try {
+  if (chrome.alarms) {
+    chrome.alarms.create('refresh-signatures', { periodInMinutes: 120 });
+    chrome.alarms.onAlarm.addListener((alarm) => {
+      if (alarm?.name === 'refresh-signatures') {
+        // Placeholder: fetch and merge remote signatures when available
+        // For now, just log and keep engine warm
+        console.debug('Refreshing signatures (stub)');
+      }
+    });
+  }
+} catch {}
