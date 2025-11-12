@@ -123,9 +123,12 @@ function initAdResponseSanitizer() {
     if (typeof origFetch === 'function' && !origFetch.__pbWrapped) {
       const wrapped = async function(input, init) {
         const url = (typeof input === 'string') ? input : (input && input.url) || '';
+        // Global OFF → ne rien modifier, renvoyer fetch original
+        if (!enabled) return origFetch(input, init);
         // Objectif A/C: limiter bursts sur googlevideo et réduire prébuffer
         const isGV = typeof url === 'string' && url.includes('googlevideo.com/videoplayback');
         if (isGV) {
+          if (!enabled) return origFetch(input, init);
           // Queue + pacing vidéo seulement; l'audio bypass pour démarrage rapide
           return gvEnqueue(async (release) => {
             await waitBufferAllowance();
@@ -244,6 +247,7 @@ function initXHRAdSanitizer() {
       };
       function trySanitize() {
         try {
+          if (!enabled) return; // Global OFF → pas de sanitation
           if (typeof url === 'string' && (url.includes('/youtubei/v1/player') || url.includes('/youtubei/v1/next'))) {
             if (xhr.responseType === '' || xhr.responseType === 'text') {
               const txt = xhr.responseText;
@@ -798,6 +802,7 @@ function initPreloadGuard() {
 
     head.appendChild = function (node) {
       try {
+        if (!enabled) return origAppend.call(this, node);
         if (
           node?.tagName === "LINK" &&
           /^(preload|prefetch)$/i.test(node.rel || "") &&
@@ -993,7 +998,7 @@ function setupQualityKeeper(){
   try {
     const player = document.getElementById('movie_player');
     if (!player || typeof player.getAvailableQualityLevels !== 'function') return;
-    if (!bitrateBoost) return;
+    if (!bitrateBoost || !enabled) return;
     // Préload metadata côté élément vidéo
     try { const v = getMainVideo(); if (v) v.preload = 'metadata'; } catch(_){ }
 
@@ -1018,6 +1023,7 @@ function setupQualityKeeper(){
 
     const applyTop = () => {
       try {
+        if (!enabled || !bitrateBoost) return;
         const levels = player.getAvailableQualityLevels?.() || [];
         const best = chooseBestQuality(levels);
         if (best) {
@@ -1048,7 +1054,9 @@ function annotateStatsPanelSafe(){
     const panel = document.querySelector('.html5-video-info-panel-content');
     if (!panel || !panel.isConnected) return;
     let line = panel.querySelector('.pureblock-stats-line');
-    const text = `PureBlock Bitrate Booster: ${bitrateBoost ? 'ON' : 'OFF'} · HDR: ${preferHDR ? 'ON' : 'OFF'} · Codec: ${codecPref.toUpperCase()}`;
+    const text = enabled
+      ? `PureBlock Bitrate Booster: ${bitrateBoost ? 'ON' : 'OFF'} · HDR: ${preferHDR ? 'ON' : 'OFF'} · Codec: ${codecPref.toUpperCase()}`
+      : 'PureBlock: OFF';
     if (!line) {
       line = document.createElement('div');
       line.className = 'pureblock-stats-line';

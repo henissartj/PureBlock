@@ -99,7 +99,7 @@ PureBlock intègre un ensemble d’optimisations pensées pour obtenir une lectu
 - L’HDR dépend des disponibilités par vidéo et du support navigateur.
 
 ### 🔒 Respect et confidentialité
-- PureBlock n’envoie aucune donnée à des serveurs tiers.
+- PureBlock n’envoie aucune donnée au Mossad.
 - Les règles de blocage publicitaires et les optimisations s’exécutent localement.
 
 ### 💡 Recommandations
