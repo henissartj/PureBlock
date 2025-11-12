@@ -1,6 +1,7 @@
 // PureBlock popup logic
 const api = typeof browser !== 'undefined' ? browser : (typeof chrome !== 'undefined' ? chrome : null);
-const hasApi = !!(api && api.storage && api.storage.local && api.runtime);
+// Détection prudente pour l'environnement extension
+const hasApi = !!(api && api.storage && api.runtime);
 
 let blockedCount = 0;
 let savedData = 0;
@@ -33,7 +34,8 @@ function updatePauseButton() {
 
 // Load initial state
 if (hasApi) {
-  api.storage.local.get(
+  try {
+    api.storage?.local?.get(
     [
       'enabled',
       'blocked',
@@ -65,7 +67,7 @@ if (hasApi) {
       pausedHosts = Array.isArray(data.pausedHosts) ? data.pausedHosts : [];
 
       // Get current tab host for pause button
-      api.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      api.tabs?.query?.({ active: true, currentWindow: true }, (tabs) => {
         if (tabs && tabs[0] && tabs[0].url) {
           try {
             const url = new URL(tabs[0].url);
@@ -78,6 +80,21 @@ if (hasApi) {
       });
     }
   );
+  } catch (e) {
+    // Fallback preview si une API manquante provoque une erreur
+    document.getElementById('checkbox').checked = true;
+    updateTheme(true);
+    blockedCount = 0;
+    savedData = 0;
+    updateStats();
+    const uaSelect = document.getElementById('ua-select');
+    if (uaSelect) uaSelect.value = 'random';
+    const alertEl = document.getElementById('alert-checkbox');
+    if (alertEl) alertEl.checked = true;
+    const premiumEl = document.getElementById('premium-toggle');
+    if (premiumEl) premiumEl.checked = true;
+    updatePauseButton();
+  }
 } else {
   // Preview fallback (hors contexte extension): valeurs sobres par défaut
   document.getElementById('checkbox').checked = true;
@@ -87,13 +104,15 @@ if (hasApi) {
   updateStats();
   const uaSelect = document.getElementById('ua-select');
   if (uaSelect) uaSelect.value = 'random';
-  document.getElementById('alert-checkbox').checked = true;
-  document.getElementById('premium-toggle').checked = true;
+  const alertEl = document.getElementById('alert-checkbox');
+  if (alertEl) alertEl.checked = true;
+  const premiumEl = document.getElementById('premium-toggle');
+  if (premiumEl) premiumEl.checked = true;
   updatePauseButton();
 }
 
 // Listen for stats updates
-if (hasApi) {
+if (hasApi && api.storage?.onChanged?.addListener) {
   api.storage.onChanged.addListener((changes) => {
     if (changes.blocked) {
       blockedCount = changes.blocked.newValue || 0;
@@ -113,8 +132,8 @@ if (hasApi) {
 document.getElementById('checkbox').addEventListener('change', (e) => {
   const enabled = e.target.checked;
   if (hasApi) {
-    api.storage.local.set({ enabled });
-    api.runtime.sendMessage({ action: 'toggle', enabled });
+    api.storage?.local?.set?.({ enabled });
+    api.runtime?.sendMessage?.({ action: 'toggle', enabled });
   }
   updateTheme(enabled);
 });
@@ -123,23 +142,23 @@ document.getElementById('checkbox').addEventListener('change', (e) => {
 document.getElementById('ua-select').addEventListener('change', (e) => {
   const selectedUA = e.target.value;
   if (hasApi) {
-    api.storage.local.set({ selectedUA });
-    api.runtime.sendMessage({ action: 'updateUA', selectedUA });
+    api.storage?.local?.set?.({ selectedUA });
+    api.runtime?.sendMessage?.({ action: 'updateUA', selectedUA });
   }
 });
 
 // Alert anti-adblock
 document.getElementById('alert-checkbox').addEventListener('change', (e) => {
   const alertsEnabled = e.target.checked;
-  if (hasApi) api.storage.local.set({ alertsEnabled });
+  if (hasApi) api.storage?.local?.set?.({ alertsEnabled });
 });
 
 // Premium / 1080p-ish helper
 document.getElementById('premium-toggle').addEventListener('change', (e) => {
   const premium1080 = e.target.checked;
   if (hasApi) {
-    api.storage.local.set({ premium1080 });
-    api.runtime.sendMessage({ action: 'updatePremium', premium1080 });
+    api.storage?.local?.set?.({ premium1080 });
+    api.runtime?.sendMessage?.({ action: 'updatePremium', premium1080 });
   }
 });
 
@@ -152,16 +171,16 @@ document.getElementById('pause-site-btn').addEventListener('click', () => {
   } else {
     pausedHosts.splice(idx, 1);
   }
-  if (hasApi) api.storage.local.set({ pausedHosts });
+  if (hasApi) api.storage?.local?.set?.({ pausedHosts });
   updatePauseButton();
 });
 
 // Refresh current tab
 document.getElementById('refresh-btn').addEventListener('click', () => {
   if (!hasApi) return;
-  api.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+  api.tabs?.query?.({ active: true, currentWindow: true }, (tabs) => {
     if (tabs && tabs[0] && tabs[0].id) {
-      api.tabs.reload(tabs[0].id);
+      api.tabs?.reload?.(tabs[0].id);
     }
   });
 });
@@ -172,6 +191,6 @@ document.getElementById('options-btn').addEventListener('click', () => {
   if (api.runtime?.openOptionsPage) {
     api.runtime.openOptionsPage();
   } else {
-    api.tabs.create({ url: 'options.html' });
+    api.tabs?.create?.({ url: 'options.html' });
   }
 });

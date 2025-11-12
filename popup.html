@@ -160,6 +160,21 @@
       transform:scale(1.05);
       accent-color:#00d4ff;
     }
+    /* Nouvelle rangée de réglages: UA + alerte côte à côte */
+    .settings-row{
+      display:flex;
+      align-items:flex-end;
+      gap:12px;
+      margin:12px 0 8px;
+    }
+    .settings-row .options,
+    .settings-row .alert-toggle{
+      flex:1;
+      margin:0;
+    }
+    @media (max-width: 340px){
+      .settings-row{flex-direction:column;align-items:stretch;gap:8px}
+    }
 
     .stats{
       display:flex;
@@ -288,7 +303,7 @@
         </label>
       </div>
 
-      <!-- OPTIONS + ALERT en ligne -->
+      <!-- OPTIONS + ALERTE (ligne sobre) -->
       <div class="settings-row">
         <div class="options">
           <label for="ua-select">User-Agent YouTube :</label>
@@ -321,18 +336,3 @@
   <script src="popup.js"></script>
 </body>
 </html>
-    /* Nouvelle rangée de réglages: UA + alerte côte à côte */
-    .settings-row{
-      display:flex;
-      align-items:flex-end;
-      gap:12px;
-      margin:12px 0 8px;
-    }
-    .settings-row .options,
-    .settings-row .alert-toggle{
-      flex:1;
-      margin:0;
-    }
-    @media (max-width: 340px){
-      .settings-row{flex-direction:column;align-items:stretch;gap:8px}
-    }
