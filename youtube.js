@@ -10,6 +10,129 @@ let lastAdTs = Date.now();
 let prevMuted = null;
 let boostedPlayback = false;
 
+// Anti‑pub: assainir les réponses player et la variable ytInitialPlayerResponse
+initAdResponseSanitizer();
+initXHRAdSanitizer();
+
+function initAdResponseSanitizer() {
+  try {
+    // 1) Hook fetch pour youtubei/v1/player – retirer les champs d’annonces
+    const origFetch = window.fetch;
+    if (typeof origFetch === 'function' && !origFetch.__pbWrapped) {
+      const wrapped = async function(input, init) {
+        const url = (typeof input === 'string') ? input : (input && input.url) || '';
+        const res = await origFetch(input, init);
+        try {
+          if (url.includes('/youtubei/v1/player')) {
+            const clone = res.clone();
+            const json = await clone.json();
+            const clean = sanitizePlayerJson(json);
+            const body = JSON.stringify(clean);
+            const headers = new Headers();
+            // Reprendre un minimum d'en‑têtes utiles
+            res.headers && res.headers.forEach((v,k)=>{ headers.set(k,v); });
+            return new Response(body, { status: res.status, statusText: res.statusText, headers });
+          }
+        } catch (e) {
+          // Si une erreur survient, on renvoie la réponse originale
+        }
+        return res;
+      };
+      wrapped.__pbWrapped = true;
+      window.fetch = wrapped;
+    }
+
+    // 2) Setter pour ytInitialPlayerResponse – supprimer adPlacements/adBreaks/playerAds
+    if (!('ytInitialPlayerResponse' in window)) {
+      // Définir un proxy pour la future assignation
+      let _val = undefined;
+      Object.defineProperty(window, 'ytInitialPlayerResponse', {
+        configurable: true,
+        get() { return _val; },
+        set(v) { _val = sanitizePlayerJson(v); }
+      });
+    } else {
+      try {
+        window.ytInitialPlayerResponse = sanitizePlayerJson(window.ytInitialPlayerResponse);
+      } catch (e) {}
+    }
+
+    // 3) Intervalle de garde: si YouTube réassigne, on nettoie
+    if (!window.__pbSanitizeTicker) {
+      window.__pbSanitizeTicker = setInterval(() => {
+        try {
+          if (window.ytInitialPlayerResponse) {
+            window.ytInitialPlayerResponse = sanitizePlayerJson(window.ytInitialPlayerResponse);
+          }
+        } catch (e) {}
+      }, 1200);
+    }
+  } catch (e) {}
+}
+
+function sanitizePlayerJson(obj) {
+  try {
+    if (!obj || typeof obj !== 'object') return obj;
+    const killKeys = ['adPlacements','adBreaks','playerAds','adSlots','adConfig','adFormats','adSignals'];
+    for (const k of killKeys) {
+      if (k in obj) {
+        try { delete obj[k]; } catch (e) { obj[k] = undefined; }
+      }
+    }
+    // Parfois présent sous obj.playerResponse
+    if (obj.playerResponse && typeof obj.playerResponse === 'object') {
+      for (const k of killKeys) {
+        if (k in obj.playerResponse) {
+          try { delete obj.playerResponse[k]; } catch (e) { obj.playerResponse[k] = undefined; }
+        }
+      }
+    }
+  } catch (e) {}
+  return obj;
+}
+
+function initXHRAdSanitizer() {
+  try {
+    const OrigXHR = window.XMLHttpRequest;
+    if (!OrigXHR || OrigXHR.__pbWrapped) return;
+    function PB_XHR() {
+      const xhr = new OrigXHR();
+      let url = '';
+      const origOpen = xhr.open;
+      xhr.open = function(method, u, async, user, pass) {
+        url = u || '';
+        return origOpen.apply(xhr, arguments);
+      };
+      function trySanitize() {
+        try {
+          if (typeof url === 'string' && (url.includes('/youtubei/v1/player') || url.includes('/youtubei/v1/next'))) {
+            if (xhr.responseType === '' || xhr.responseType === 'text') {
+              const txt = xhr.responseText;
+              const obj = JSON.parse(txt);
+              const clean = sanitizePlayerJson(obj);
+              const str = JSON.stringify(clean);
+              try {
+                Object.defineProperty(xhr, 'responseText', { configurable: true, get(){ return str; } });
+                Object.defineProperty(xhr, 'response', { configurable: true, get(){ return str; } });
+              } catch (e) {}
+            } else if (xhr.responseType === 'json' && xhr.response) {
+              const clean = sanitizePlayerJson(xhr.response);
+              try {
+                Object.defineProperty(xhr, 'response', { configurable: true, get(){ return clean; } });
+              } catch (e) {}
+            }
+          }
+        } catch (e) {}
+      }
+      xhr.addEventListener('load', trySanitize);
+      xhr.addEventListener('readystatechange', function(){ if (xhr.readyState === 4) trySanitize(); });
+      return xhr;
+    }
+    PB_XHR.__pbWrapped = true;
+    window.XMLHttpRequest = PB_XHR;
+  } catch (e) {}
+}
+
 // === Téléchargement YouTube: bouton et menu qualité ===
 function injectDownloadButton() {
   // Téléchargement désactivé
@@ -596,42 +719,9 @@ function handlePlayerAds() {
       boostedPlayback = true;
     }
   } catch (e) {}
-
-  // Ajouter un bouton overlay "Skip pub" pour donner le contrôle utilisateur
-  ensureAdSkipOverlay(player, video);
+  // Ne pas ajouter d'overlay personnalisé: on vise l'éradication en amont.
 }
-
-function ensureAdSkipOverlay(player, video) {
-  try {
-    if (!player || !video) return;
-    if (player.querySelector('.pureblock-skip-overlay')) return;
-    const wrap = document.createElement('div');
-    wrap.className = 'pureblock-skip-overlay';
-    wrap.style.cssText = 'position:absolute;top:8px;right:8px;z-index:9999;';
-    const btn = document.createElement('button');
-    btn.textContent = 'Skip pub';
-    btn.setAttribute('aria-label', 'Skip pub (PureBlock)');
-    btn.style.cssText = 'padding:6px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.25);color:#fff;background:rgba(20,20,32,0.6);backdrop-filter:saturate(120%) blur(3px);font-size:12px;cursor:pointer;';
-    btn.addEventListener('click', () => {
-      try {
-        const skipBtn = document.querySelector('.ytp-ad-skip-button, .ytp-ad-skip-button-modern');
-        if (skipBtn) {
-          skipBtn.click();
-        } else {
-          // Fallback: tenter d'aller en fin d'ad si autorisé
-          const dur = video.duration || 0;
-          if (dur > 0) {
-            video.currentTime = Math.max(0, dur - 0.05);
-            video.play?.();
-          }
-        }
-      } catch (e) {}
-    });
-    wrap.appendChild(btn);
-    player.style.position = 'relative';
-    player.appendChild(wrap);
-  } catch (e) {}
-}
+// Suppression de l’overlay personnalisé: aucune modification d’UI n’est injectée.
 
 function maybeSleep() {
   if (!sleeping && Date.now() - lastAdTs > SLEEP_AFTER_MS) {

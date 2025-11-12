@@ -195,3 +195,61 @@ export async function initPrivacy() {
     console.warn("PureBlock privacy: échec updateDynamicRules", e);
   }
 }
+
+// Nettoyage universel des overlays publicitaires sur lecteurs vidéo (hors YouTube/Twitch spécifiques)
+if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+  (function initGlobalAdCosmetics() {
+    try {
+      const SELECTORS = [
+        '.ima-ads-container',
+        '.google-ima',
+        '.vjs-ads-label',
+        '.vjs-ads-overlay',
+        '.vjs-ima-ad-container',
+        '.jw-flag-ads',
+        '.jw-ads',
+        '.ad-overlay',
+        '.ad-banner',
+        '.ad-container'
+      ];
+
+      function hide(el) {
+        try {
+          el.style.setProperty('display', 'none', 'important');
+          el.style.setProperty('visibility', 'hidden', 'important');
+          el.style.setProperty('opacity', '0', 'important');
+          el.style.setProperty('pointer-events', 'none', 'important');
+        } catch (e) {}
+      }
+
+      function cleanOnce(root) {
+        try {
+          for (const sel of SELECTORS) {
+            root.querySelectorAll(sel).forEach(hide);
+          }
+          // Heuristique: éléments overlay absolus au-dessus d'un player
+          document.querySelectorAll('video').forEach((v) => {
+            const parent = v.closest('.jwplayer, .video-js, .plyr, .vjs-player, .html5-video-player, .player, [class*="player"]') || v.parentElement;
+            if (!parent) return;
+            parent.querySelectorAll('*').forEach((n) => {
+              const cs = window.getComputedStyle(n);
+              if (cs.position === 'absolute' || cs.position === 'fixed') {
+                // masque les overlays non interactifs contenant des mots clés pub
+                const t = (n.textContent || '').toLowerCase();
+                if (t.includes('pub') || t.includes('advert') || t.includes('sponsor') || t.includes('ads')) {
+                  hide(n);
+                }
+              }
+            });
+          });
+        } catch (e) {}
+      }
+
+      const mo = new MutationObserver((muts) => {
+        cleanOnce(document);
+      });
+      try { mo.observe(document.documentElement, { childList: true, subtree: true }); } catch (e) {}
+      cleanOnce(document);
+    } catch (e) {}
+  })();
+}
