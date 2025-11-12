@@ -94,7 +94,9 @@
         "content.js",
         "rules_yt_ads.json",
         "assets/empty.js",
-        "assets/empty.json"
+        "assets/empty.json",
+        "filters/base.txt",
+        "ublock_engine.js"
       ],
       "matches": [
         "<all_urls>"

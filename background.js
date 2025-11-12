@@ -37,6 +37,16 @@ async function ensureInitialState() {
   await syncEnabledRuleset(stored.enabled ?? DEFAULT_ENABLED);
   await applyUARule(stored.selectedUA || "random");
   await initPrivacy();
+  // Init minimal uBlock-style filters
+  try {
+    const { loadBundledFilters, applyDynamicFiltersFromText } = await import('./ublock_engine.js');
+    const text = await loadBundledFilters('filters/base.txt');
+    if (text && (stored.enabled ?? DEFAULT_ENABLED)) {
+      await applyDynamicFiltersFromText(text);
+    }
+  } catch (e) {
+    console.warn('PureBlock: uBlock engine init failed', e);
+  }
 }
 
 async function syncEnabledRuleset(enabled) {
