@@ -132,6 +132,7 @@
         if (enableShortsBan) {
           removeShortsElements();
           hideShortsGuideEntries();
+          removeShortsShelvesByHeading();
         }
         // Purge sponsorisé: rythmé en Mode performance
         if (!performanceMode || (Date.now() - lastSponsorPurgeTs) > 4000) {
@@ -166,6 +167,21 @@
         });
       }
       // Stats globales gérées ailleurs; on reste léger ici.
+    } catch {}
+  }
+
+  function removeShortsShelvesByHeading() {
+    try {
+      const shelves = document.querySelectorAll('ytd-rich-shelf-renderer, ytd-rich-section-renderer');
+      shelves.forEach(shelf => {
+        try {
+          const heading = shelf.querySelector('#title, h2, .ytd-rich-shelf-renderer') || shelf.querySelector('yt-formatted-string');
+          const txt = (heading?.textContent || '').trim().toLowerCase();
+          if (txt.includes('short')) {
+            animateRemoval(shelf);
+          }
+        } catch {}
+      });
     } catch {}
   }
 

@@ -80,6 +80,7 @@ let debugOverlayEnabled = false;
 let debugOverlayToggle = false;
 let debugLogs = [];
 let debugOverlayEl = null;
+let overlayHeartbeat = null;
 
 function pushLog(entry) {
   try {
@@ -175,6 +176,20 @@ function openDebugOverlay() {
     if (!debugOverlayEl.isConnected) document.documentElement.appendChild(debugOverlayEl);
     debugOverlayEnabled = true;
     renderDebugOverlay();
+    // Démarre un heartbeat léger pour garantir la présence de l'overlay
+    try {
+      if (overlayHeartbeat) clearInterval(overlayHeartbeat);
+      overlayHeartbeat = setInterval(() => {
+        try {
+          if (!extEnabled || !debugOverlayEnabled) return;
+          if (!debugOverlayEl || !debugOverlayEl.isConnected) {
+            debugOverlayEl = createDebugOverlay();
+            document.documentElement.appendChild(debugOverlayEl);
+            renderDebugOverlay();
+          }
+        } catch (_) {}
+      }, 2000);
+    } catch (_) {}
   } catch (_) {}
 }
 
@@ -182,6 +197,7 @@ function closeDebugOverlay() {
   try {
     debugOverlayEnabled = false;
     if (debugOverlayEl && debugOverlayEl.parentNode) debugOverlayEl.parentNode.removeChild(debugOverlayEl);
+    if (overlayHeartbeat) { try { clearInterval(overlayHeartbeat); } catch {} overlayHeartbeat = null; }
   } catch (_) {}
 }
 
@@ -192,6 +208,10 @@ function updateOverlayState() {
       openDebugOverlay();
     } else if (!shouldOpen && debugOverlayEnabled) {
       closeDebugOverlay();
+    }
+    // Si on doit être ouvert mais l’élément a été retiré, réattacher
+    if (shouldOpen && (!debugOverlayEl || !debugOverlayEl.isConnected)) {
+      try { openDebugOverlay(); } catch (_) {}
     }
   } catch (_) {}
 }
