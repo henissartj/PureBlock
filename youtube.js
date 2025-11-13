@@ -2,6 +2,7 @@ const api = typeof browser !== "undefined" ? browser : chrome;
 
 let enabled = true;
 let alertsEnabled = true;
+let performanceMode = false;
 let observer = null;
 let playerObserver = null;
 let idleScheduled = false;
@@ -220,13 +221,14 @@ function initAdResponseSanitizer() {
 
     // 3) Intervalle de garde: si YouTube réassigne, on nettoie
     if (!window.__pbSanitizeTicker) {
+      const tickMs = performanceMode ? 2400 : 1200;
       window.__pbSanitizeTicker = setInterval(() => {
         try {
           if (window.ytInitialPlayerResponse) {
             window.ytInitialPlayerResponse = sanitizePlayerJson(window.ytInitialPlayerResponse);
           }
         } catch (e) {}
-      }, 1200);
+      }, tickMs);
     }
   } catch (e) {}
 }
@@ -714,9 +716,10 @@ function getAdaptiveFallbackFormats() {
 const SLEEP_AFTER_MS = 3 * 60 * 1000; // 3 minutes d'inactivité pub
 
 // Chargement initial des paramètres
-api.storage.local.get(["enabled", "alertsEnabled"], (data) => {
+api.storage.local.get(["enabled", "alertsEnabled", "performanceMode"], (data) => {
   enabled = data.enabled !== false;
   alertsEnabled = data.alertsEnabled !== false;
+  performanceMode = data.performanceMode === true;
 
   if (enabled) {
     bootstrap();
@@ -748,6 +751,9 @@ api.storage.onChanged.addListener((changes) => {
   if ("alertsEnabled" in changes) {
     alertsEnabled = changes.alertsEnabled.newValue !== false;
   }
+  if ("performanceMode" in changes) {
+    performanceMode = changes.performanceMode.newValue === true;
+  }
 });
 
 function bootstrap() {
@@ -777,9 +783,9 @@ function observeAds() {
     };
 
     if ("requestIdleCallback" in window) {
-      requestIdleCallback(cb, { timeout: 120 });
+      requestIdleCallback(cb, { timeout: performanceMode ? 300 : 120 });
     } else {
-      setTimeout(cb, 80);
+      setTimeout(cb, performanceMode ? 160 : 80);
     }
 
     // Observer ciblé sur le player pour changements de classe (ad-showing)
@@ -933,11 +939,11 @@ function attachPlayerObserver() {
           attachPlaybackGuard();
         }
       };
-      if ("requestIdleCallback" in window) {
-        requestIdleCallback(cb, { timeout: 120 });
-      } else {
-        setTimeout(cb, 80);
-      }
+    if ("requestIdleCallback" in window) {
+        requestIdleCallback(cb, { timeout: performanceMode ? 300 : 120 });
+    } else {
+        setTimeout(cb, performanceMode ? 160 : 80);
+    }
     });
 
     playerObserver.observe(player, {
@@ -1281,7 +1287,7 @@ function setupQualityKeeper(){
     applyTop();
     // Réappliquer à différents événements
     window.addEventListener('yt-navigate-finish', () => setTimeout(applyTop, 600), { passive: true });
-    const qTick = setInterval(applyTop, 1200);
+    const qTick = setInterval(applyTop, performanceMode ? 2400 : 1200);
     player.addEventListener?.('onPlaybackQualityChange', applyTop);
   } catch (e) {}
 }
@@ -1290,7 +1296,7 @@ let __pbAnnotQueued = false;
 function scheduleAnnotateStats(){
   if (__pbAnnotQueued) return;
   __pbAnnotQueued = true;
-  setTimeout(() => { __pbAnnotQueued = false; annotateStatsPanelSafe(); }, 150);
+  setTimeout(() => { __pbAnnotQueued = false; annotateStatsPanelSafe(); }, performanceMode ? 600 : 150);
 }
 
 function annotateStatsPanelSafe(){

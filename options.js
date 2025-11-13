@@ -66,6 +66,7 @@ function renderPausedHosts() {
 function init() {
   const qualitySelectEl = document.getElementById('quality-select');
   const stealthToggleEl = document.getElementById('stealth-strong-toggle');
+  const performanceToggleEl = document.getElementById('performance-toggle');
 
   if (!hasApi) {
     // Mode aperçu hors contexte extension: valeurs par défaut, pas de persistance
@@ -77,6 +78,7 @@ function init() {
     if (dbg) dbg.checked = false;
     if (qualitySelectEl) qualitySelectEl.value = 'auto';
     if (stealthToggleEl) stealthToggleEl.checked = false;
+    if (performanceToggleEl) performanceToggleEl.checked = false;
 
     // N'attache que des listeners UI no-op
     document.getElementById('purefocus-toggle')?.addEventListener('change', () => {});
@@ -84,6 +86,7 @@ function init() {
     document.getElementById('debug-toggle')?.addEventListener('change', () => {});
     qualitySelectEl?.addEventListener('change', () => {});
     stealthToggleEl?.addEventListener('change', () => {});
+    performanceToggleEl?.addEventListener('change', () => {});
 
     // Listes locales vides en aperçu
     renderChannels();
@@ -109,7 +112,8 @@ function init() {
       'premium1080',
       'bitrateBoost',
       'preferHDR',
-      'youtubeCodecPref'
+      'youtubeCodecPref',
+      'performanceMode'
     ],
     (data) => {
       document.getElementById('purefocus-toggle').checked =
@@ -129,6 +133,10 @@ function init() {
 
       if (stealthToggleEl) {
         stealthToggleEl.checked = data.stealthStrong === true;
+      }
+
+      if (performanceToggleEl) {
+        performanceToggleEl.checked = data.performanceMode === true;
       }
 
       const bitrateBoostEl = document.getElementById('bitrate-boost-toggle');
@@ -189,6 +197,12 @@ function init() {
       api.storage.local.set({ stealthStrong: e.target.checked }, () => {
         api.runtime.sendMessage({ action: 'updateStealth' });
       });
+    });
+  }
+
+  if (performanceToggleEl) {
+    performanceToggleEl.addEventListener('change', (e) => {
+      api.storage.local.set({ performanceMode: e.target.checked });
     });
   }
 

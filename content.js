@@ -10,6 +10,9 @@
   let rootsObserver = null;
   let enablePureFocus = false;
   let enableShortsBan = false;
+  let performanceMode = false;
+  let lastSponsorPurgeTs = 0;
+  let lastQualityForceTs = 0;
 
   const domain = location.hostname.replace(/^www\./, '');
 
@@ -128,13 +131,20 @@
           removeShortsElements();
           hideShortsGuideEntries();
         }
-        purgeSponsoredCards();
+        // Purge sponsorisé: rythmé en Mode performance
+        if (!performanceMode || (Date.now() - lastSponsorPurgeTs) > 4000) {
+          purgeSponsoredCards();
+          lastSponsorPurgeTs = Date.now();
+        }
         handleAds();
-        forcePremiumQuality();
+        if (!performanceMode || (Date.now() - lastQualityForceTs) > 4000) {
+          forcePremiumQuality();
+          lastQualityForceTs = Date.now();
+        }
       } finally {
         cleanPending = false;
       }
-    }, { timeout: 1000 });
+    }, { timeout: performanceMode ? 2000 : 1000 });
   }
 
   function removeShortsElements() {
@@ -255,10 +265,11 @@
   }
 
   async function startBlocking() {
-    const { pausedHosts = [], pureFocus = false, shortsBan = false } = await chrome.storage.local.get(['pausedHosts','pureFocus','shortsBan']);
+    const { pausedHosts = [], pureFocus = false, shortsBan = false, performanceMode: pm = false } = await chrome.storage.local.get(['pausedHosts','pureFocus','shortsBan','performanceMode']);
     isPaused = Array.isArray(pausedHosts) && pausedHosts.includes(domain);
     enablePureFocus = pureFocus === true;
     enableShortsBan = shortsBan === true || enablePureFocus === true;
+    performanceMode = pm === true;
 
     if (isPaused) {
       resetInjectedStyles();
@@ -343,6 +354,9 @@
           }
           if (changes.shortsBan) {
             enableShortsBan = changes.shortsBan.newValue === true || enablePureFocus === true;
+          }
+          if (changes.performanceMode) {
+            performanceMode = changes.performanceMode.newValue === true;
           }
           if (!isPaused) {
             if (enableShortsBan) {
