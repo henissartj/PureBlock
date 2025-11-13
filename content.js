@@ -37,7 +37,8 @@
     const css = base + "\n" + cosmeticFilters.map((f) => `${f.selector}{${f.style}}`).join('\n') + "\n" + [
       // Shorts-specific hiding by CSS to collapse quickly
       'ytd-reel-shelf-renderer, ytd-reel-item-renderer, ytd-reel-video-renderer, ytd-reel-player-overlay-renderer, ytd-reel-player-renderer { display:none !important; visibility:hidden !important; height:0 !important; }',
-      'a[href^="/shorts"], a[href*="youtube.com/shorts"] { display:none !important; visibility:hidden !important; }'
+      'a[href^="/shorts"], a[href*="youtube.com/shorts"], a[title*="Shorts" i] { display:none !important; visibility:hidden !important; }',
+      'ytd-guide-entry-renderer[aria-label*="Shorts" i], ytd-mini-guide-entry-renderer[aria-label*="Shorts" i], tp-yt-paper-item[aria-label*="Shorts" i] { display:none !important; visibility:hidden !important; }'
     ].join('\n');
     cosmeticsStyleEl = document.createElement('style');
     cosmeticsStyleEl.id = 'pb-cosmetics';
@@ -158,17 +159,22 @@
 
   function hideShortsGuideEntries() {
     try {
-      const guideSel = [
-        'ytd-mini-guide-entry-renderer a[href^="/shorts"]',
-        'ytd-guide-entry-renderer a[href^="/shorts"]'
+      const containers = [
+        'ytd-mini-guide-entry-renderer',
+        'ytd-guide-entry-renderer',
+        'tp-yt-paper-item'
       ];
-      for (const sel of guideSel) {
-        document.querySelectorAll(sel).forEach(a => {
+      for (const sel of containers) {
+        document.querySelectorAll(sel).forEach(node => {
           try {
-            const parent = a.closest('ytd-guide-entry-renderer') || a.closest('ytd-mini-guide-entry-renderer');
-            const node = parent || a;
-            node.style.setProperty('display','none','important');
-            node.style.setProperty('visibility','hidden','important');
+            const txt = (node.textContent || '').toLowerCase();
+            const aria = (node.getAttribute('aria-label') || '').toLowerCase();
+            const hasShorts = txt.includes('shorts') || aria.includes('shorts');
+            if (hasShorts) {
+              node.style.setProperty('display','none','important');
+              node.style.setProperty('visibility','hidden','important');
+              node.style.setProperty('pointer-events','none','important');
+            }
           } catch {}
         });
       }

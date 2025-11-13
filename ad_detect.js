@@ -1,7 +1,70 @@
 // Generic content script across all sites: DOM parsing + adaptive ad detection
-import { shouldBlockByHeuristics, nodeFeatures, isTrackerScript } from './ml/heuristics.js';
-import { AdDetectorModel } from './ml/model_stub.js';
-import { AdCache } from './cache.js';
+// NOTE: Content scripts cannot use top-level ESM imports. Use dynamic import with fallback.
+let shouldBlockByHeuristics, nodeFeatures, isTrackerScript, AdDetectorModel, AdCache;
+try {
+  const heur = await import(chrome.runtime.getURL('ml/heuristics.js'));
+  const modelMod = await import(chrome.runtime.getURL('ml/model_stub.js'));
+  const cacheMod = await import(chrome.runtime.getURL('cache.js'));
+  shouldBlockByHeuristics = heur.shouldBlockByHeuristics;
+  nodeFeatures = heur.nodeFeatures;
+  isTrackerScript = heur.isTrackerScript;
+  AdDetectorModel = modelMod.AdDetectorModel;
+  AdCache = cacheMod.AdCache;
+} catch (_) {
+  // Minimal inline fallbacks to stay operational
+  shouldBlockByHeuristics = (el) => {
+    try {
+      const id = (el.id || '').toLowerCase();
+      const cls = (el.className || '').toString().toLowerCase();
+      const txt = (el.textContent || '').toLowerCase();
+      if (id.includes('ad') || cls.includes('ad')) return true;
+      const hints = ['sponsor','promoted','advert','ads'];
+      return hints.some(h => txt.includes(h));
+    } catch { return false; }
+  };
+  nodeFeatures = (el) => {
+    const rect = el.getBoundingClientRect ? el.getBoundingClientRect() : { width: 0, height: 0 };
+    const cs = el.ownerDocument && el.ownerDocument.defaultView ? el.ownerDocument.defaultView.getComputedStyle(el) : { position: '', zIndex: '' };
+    return {
+      tag: (el.tagName || '').toLowerCase(),
+      id: el.id || '',
+      cls: (el.className || '').toString(),
+      text: (el.textContent || '').slice(0, 512),
+      w: rect.width || 0,
+      h: rect.height || 0,
+      pos: cs.position || '',
+      z: parseInt(cs.zIndex || '0', 10) || 0,
+      href: el.href || '',
+      src: el.src || ''
+    };
+  };
+  isTrackerScript = (el) => {
+    const src = (el.src || '').toLowerCase();
+    return !!src && (
+      src.includes('doubleclick.net') || src.includes('googlesyndication.com') || src.includes('googleads.g.doubleclick.net')
+    );
+  };
+  AdDetectorModel = class {
+    constructor(){ this.threshold = 5; }
+    predictFromFeatures(f){
+      let s = 0; const t = (f.tag||'').toLowerCase(); const tokens = [f.id,f.cls,f.text].join(' ').toLowerCase();
+      ['ad','ads','advert','sponsor','promoted','promo'].forEach(w => { if (tokens.includes(w)) s += 3; });
+      if (f.w >= 728 && f.h >= 90) s += 2; if (f.w >= 300 && f.h >= 250) s += 2;
+      if ((f.z||0) >= 1000 && ['fixed','sticky'].includes(f.pos)) s += 3;
+      const href = String(f.href||'').toLowerCase(); const src = String(f.src||'').toLowerCase();
+      if (href.includes('pagead') || href.includes('aclk')) s += 4;
+      if (['doubleclick.net','googlesyndication.com','googleads.g.doubleclick.net'].some(h => src.includes(h))) s += 5;
+      if (t === 'iframe') s += 2; if (t === 'img' && (src.includes('activeview')||src.includes('trackimp'))) s += 4;
+      return s;
+    }
+  };
+  AdCache = class {
+    constructor(){ this._seen = new WeakSet(); this._memo = new Map(); }
+    seenNode(el){ if (this._seen.has(el)) return true; this._seen.add(el); return false; }
+    getSelector(k){ return this._memo.get(k); }
+    setSelector(k,v){ this._memo.set(k,v); }
+  };
+}
 
 const model = new AdDetectorModel();
 const cache = new AdCache();
