@@ -111,4 +111,4 @@ PureBlock intègre un ensemble d’optimisations pensées pour obtenir une lectu
 
 ## 🙌 Remerciements
 
-- La fonctionnalité d’anti‑Shorts YouTube a été proposée par Mattis. Merci pour l’idée et les coups de fouets qui m'ont aidés à travailler.
+- La fonctionnalité d’anti‑Shorts YouTube a été proposée par Mattis. Merci pour l’idée et les coups de fouets qui m'ont aidés à travailler. Il m'a dit de me sortir les doigts puis m'a mit les siens.
