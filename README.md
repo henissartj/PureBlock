@@ -108,3 +108,7 @@ PureBlock intègre un ensemble d’optimisations pensées pour obtenir une lectu
 - Matériel ancien ou CPU limité: `H.264` + 1080p60 pour une fluidité optimale.
 
 ---
+
+## 🙌 Remerciements
+
+- La fonctionnalité d’anti‑Shorts YouTube a été proposée par Mattis. Merci pour l’idée et les coups de fouets qui m'ont aidés à travailler.
