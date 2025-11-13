@@ -72,8 +72,119 @@ let strictMode = false;
 let aiEnabled = true;
 let blockedCount = 0;
 
+// Debug overlay & detailed logs
+let debugDetailed = false;
+let debugOverlayEnabled = false;
+let debugLogs = [];
+let debugOverlayEl = null;
+
+function pushLog(entry) {
+  try {
+    const ts = new Date().toISOString();
+    const line = typeof entry === 'string' ? { msg: entry } : (entry || {});
+    debugLogs.push({ ts, ...line });
+    if (debugLogs.length > 300) debugLogs.splice(0, debugLogs.length - 300);
+    if (debugOverlayEnabled) renderDebugOverlay();
+  } catch (_) {}
+}
+
+function createDebugOverlay() {
+  const wrap = document.createElement('div');
+  wrap.id = 'pb-debug-overlay';
+  wrap.style.position = 'fixed';
+  wrap.style.zIndex = '2147483646';
+  wrap.style.right = '12px';
+  wrap.style.bottom = '12px';
+  wrap.style.width = '360px';
+  wrap.style.maxHeight = '50vh';
+  wrap.style.background = 'rgba(10,10,20,0.92)';
+  wrap.style.border = '1px solid rgba(160,216,255,0.25)';
+  wrap.style.borderRadius = '10px';
+  wrap.style.boxShadow = '0 8px 24px rgba(0,0,0,0.6)';
+  wrap.style.backdropFilter = 'blur(6px)';
+  wrap.style.color = '#dfe6ff';
+  wrap.style.fontFamily = 'monospace';
+  wrap.style.fontSize = '11px';
+  wrap.style.display = 'flex';
+  wrap.style.flexDirection = 'column';
+  wrap.style.overflow = 'hidden';
+
+  const header = document.createElement('div');
+  header.style.display = 'flex';
+  header.style.alignItems = 'center';
+  header.style.justifyContent = 'space-between';
+  header.style.padding = '6px 8px';
+  header.style.background = 'rgba(20,20,34,0.95)';
+  const title = document.createElement('div');
+  title.textContent = 'PureBlock • Logs';
+  title.style.fontWeight = '600';
+  title.style.letterSpacing = '0.2px';
+  const btns = document.createElement('div');
+  const copyBtn = document.createElement('button');
+  copyBtn.textContent = 'Copier';
+  copyBtn.style.marginRight = '8px';
+  copyBtn.style.cursor = 'pointer';
+  const closeBtn = document.createElement('button');
+  closeBtn.textContent = 'Fermer';
+  closeBtn.style.cursor = 'pointer';
+  btns.appendChild(copyBtn);
+  btns.appendChild(closeBtn);
+  header.appendChild(title);
+  header.appendChild(btns);
+
+  const body = document.createElement('div');
+  body.style.padding = '6px 8px';
+  body.style.overflow = 'auto';
+  body.style.flex = '1';
+  body.style.whiteSpace = 'pre-wrap';
+  body.style.wordBreak = 'break-word';
+  body.id = 'pb-debug-body';
+
+  wrap.appendChild(header);
+  wrap.appendChild(body);
+
+  copyBtn.addEventListener('click', async () => {
+    try {
+      const text = debugLogs.map(l => `${l.ts} | ${JSON.stringify(l)}`).join('\n');
+      await navigator.clipboard?.writeText?.(text);
+    } catch (_) {}
+  });
+  closeBtn.addEventListener('click', () => {
+    try { closeDebugOverlay(); } catch (_) {}
+  });
+
+  return wrap;
+}
+
+function renderDebugOverlay() {
+  try {
+    const body = debugOverlayEl && debugOverlayEl.querySelector('#pb-debug-body');
+    if (!body) return;
+    const lines = debugLogs.map(l => `${l.ts}  ${l.msg ? l.msg : ''}${l.reason ? ' ['+l.reason+']' : ''}${l.tag ? ' <'+l.tag+'#'+(l.id||'')+'>' : ''}`);
+    body.textContent = lines.join('\n');
+    body.scrollTop = body.scrollHeight;
+  } catch (_) {}
+}
+
+function openDebugOverlay() {
+  try {
+    if (!debugOverlayEl) debugOverlayEl = createDebugOverlay();
+    if (!debugOverlayEl.isConnected) document.documentElement.appendChild(debugOverlayEl);
+    debugOverlayEnabled = true;
+    renderDebugOverlay();
+  } catch (_) {}
+}
+
+function closeDebugOverlay() {
+  try {
+    debugOverlayEnabled = false;
+    if (debugOverlayEl && debugOverlayEl.parentNode) debugOverlayEl.parentNode.removeChild(debugOverlayEl);
+  } catch (_) {}
+}
+
 function notifyBlocked(kind) {
   try { chrome.runtime?.sendMessage?.({ type: 'blocked', kind }); } catch {}
+  if (debugDetailed) pushLog({ msg: 'blocked', reason: kind });
 }
 
 function removeNode(el, reason = 'ad') {
@@ -82,6 +193,12 @@ function removeNode(el, reason = 'ad') {
     el.remove();
     blockedCount++;
     notifyBlocked(reason);
+    if (debugDetailed) {
+      try {
+        const tag = (el.tagName||'').toLowerCase();
+        pushLog({ msg: 'remove', reason, tag, id: el.id, cls: (el.className||'').toString() });
+      } catch (_) {}
+    }
   } catch {
     // fallback: hide
     el.style.setProperty('display', 'none', 'important');
@@ -101,6 +218,7 @@ function processNode(el) {
     if (block) {
       cache.setSelector(key, true);
       removeNode(el, heuristicHit ? 'heuristic' : 'ml');
+      if (debugDetailed) pushLog({ msg: 'decision', tag: feat.tag, id: feat.id, cls: feat.cls, score, heuristicHit, strictMode, aiEnabled });
     }
   } catch {}
 }
@@ -163,6 +281,7 @@ function initWorker() {
       if (type === 'score' && node) {
         const should = (score >= model.threshold) || (strictMode && score >= 4);
         if (should && node instanceof Element) removeNode(node, 'worker');
+        if (debugDetailed) pushLog({ msg: 'worker-score', score, should });
       }
     };
   } catch {}
@@ -183,6 +302,8 @@ chrome.runtime?.onMessage?.addListener((msg) => {
   if (!msg) return;
   if (msg.type === 'toggle_ai') aiEnabled = !!msg.enabled;
   if (msg.type === 'toggle_strict') strictMode = !!msg.enabled;
+  if (msg.type === 'open_debug_overlay') openDebugOverlay();
+  if (msg.type === 'close_debug_overlay') closeDebugOverlay();
   if (msg.type === 'report_ad') {
     // capture a snapshot of top suspicious nodes
     const nodes = Array.from(document.querySelectorAll('iframe, img, a, div, section'))
@@ -196,6 +317,17 @@ chrome.runtime?.onMessage?.addListener((msg) => {
 
 // Init early
 try {
+  // Load debugDetailed from storage and watch changes
+  try {
+    chrome.storage?.local?.get?.(['debugDetailed']).then(({ debugDetailed: dd = false }) => { debugDetailed = !!dd; });
+    chrome.storage?.onChanged?.addListener?.((changes, area) => {
+      if (area === 'local' && changes && changes.debugDetailed) {
+        debugDetailed = !!changes.debugDetailed.newValue;
+        pushLog({ msg: 'debugDetailed-update', enabled: debugDetailed });
+      }
+    });
+  } catch (_) {}
+
   initWorker();
   scanInitial();
   observeMutations();

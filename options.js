@@ -67,15 +67,19 @@ function init() {
   const qualitySelectEl = document.getElementById('quality-select');
   const stealthToggleEl = document.getElementById('stealth-strong-toggle');
   const performanceToggleEl = document.getElementById('performance-toggle');
+  const debugDetailedToggleEl = document.getElementById('debug-detailed-toggle');
+  const openDebugOverlayBtn = document.getElementById('open-debug-overlay-btn');
 
   if (!hasApi) {
     // Mode aperçu hors contexte extension: valeurs par défaut, pas de persistance
     const pf = document.getElementById('purefocus-toggle');
     const sp = document.getElementById('sponsor-toggle');
     const dbg = document.getElementById('debug-toggle');
+    const dbgDet = document.getElementById('debug-detailed-toggle');
     if (pf) pf.checked = false;
     if (sp) sp.checked = false;
     if (dbg) dbg.checked = false;
+    if (dbgDet) dbgDet.checked = false;
     if (qualitySelectEl) qualitySelectEl.value = 'auto';
     if (stealthToggleEl) stealthToggleEl.checked = false;
     if (performanceToggleEl) performanceToggleEl.checked = false;
@@ -84,9 +88,11 @@ function init() {
     document.getElementById('purefocus-toggle')?.addEventListener('change', () => {});
     document.getElementById('sponsor-toggle')?.addEventListener('change', () => {});
     document.getElementById('debug-toggle')?.addEventListener('change', () => {});
+    document.getElementById('debug-detailed-toggle')?.addEventListener('change', () => {});
     qualitySelectEl?.addEventListener('change', () => {});
     stealthToggleEl?.addEventListener('change', () => {});
     performanceToggleEl?.addEventListener('change', () => {});
+    openDebugOverlayBtn?.addEventListener('click', () => {});
 
     // Listes locales vides en aperçu
     renderChannels();
@@ -103,6 +109,7 @@ function init() {
       'shortsBan',
       'sponsorSkip',
       'debugOverlay',
+      'debugDetailed',
       'allowedChannels',
       'pausedHosts',
       'blocked',
@@ -126,6 +133,9 @@ function init() {
         data.sponsorSkip === true;
       document.getElementById('debug-toggle').checked =
         data.debugOverlay === true;
+      if (debugDetailedToggleEl) {
+        debugDetailedToggleEl.checked = data.debugDetailed === true;
+      }
 
       if (qualitySelectEl) {
         qualitySelectEl.value = data.targetQuality || 'auto';
@@ -184,6 +194,10 @@ function init() {
     api.storage.local.set({ debugOverlay: e.target.checked });
   });
 
+  debugDetailedToggleEl?.addEventListener('change', (e) => {
+    api.storage.local.set({ debugDetailed: e.target.checked });
+  });
+
   if (qualitySelectEl) {
     qualitySelectEl.addEventListener('change', (e) => {
       const val = e.target.value;
@@ -205,6 +219,17 @@ function init() {
       api.storage.local.set({ performanceMode: e.target.checked });
     });
   }
+
+  // Open overlay on current tab
+  openDebugOverlayBtn?.addEventListener('click', () => {
+    try {
+      api.tabs?.query?.({ active: true, currentWindow: true }, (tabs) => {
+        if (tabs && tabs[0] && tabs[0].id) {
+          api.tabs?.sendMessage?.(tabs[0].id, { type: 'open_debug_overlay' });
+        }
+      });
+    } catch (_) {}
+  });
 
   const bitrateBoostEl = document.getElementById('bitrate-boost-toggle');
   bitrateBoostEl?.addEventListener('change', (e) => {
