@@ -71,6 +71,8 @@ const cache = new AdCache();
 let strictMode = false;
 let aiEnabled = true;
 let blockedCount = 0;
+let extEnabled = true; // Respecte le ON/OFF global
+let mutObs = null; // Observateur mutations contrôlable
 
 // Debug overlay & detailed logs
 let debugDetailed = false;
@@ -185,7 +187,7 @@ function closeDebugOverlay() {
 
 function updateOverlayState() {
   try {
-    const shouldOpen = !!(debugOverlayToggle || debugDetailed);
+    const shouldOpen = !!(extEnabled && (debugOverlayToggle || debugDetailed));
     if (shouldOpen && !debugOverlayEnabled) {
       openDebugOverlay();
     } else if (!shouldOpen && debugOverlayEnabled) {
@@ -200,7 +202,7 @@ function notifyBlocked(kind) {
 }
 
 function removeNode(el, reason = 'ad') {
-  if (!el || cache.seenNode(el)) return;
+  if (!extEnabled || !el || cache.seenNode(el)) return;
   try {
     el.remove();
     blockedCount++;
@@ -218,7 +220,7 @@ function removeNode(el, reason = 'ad') {
 }
 
 function processNode(el) {
-  if (!el || cache.seenNode(el)) return;
+  if (!extEnabled || !el || cache.seenNode(el)) return;
   try {
     const feat = nodeFeatures(el);
     const key = `${feat.tag}|${feat.id}|${feat.cls}`;
@@ -236,6 +238,7 @@ function processNode(el) {
 }
 
 function scanInitial() {
+  if (!extEnabled) return;
   const candidates = document.querySelectorAll('iframe, img, .ad, [class*="ad"], [id*="ad"], [class*="sponsor"], [id*="sponsor"], a[href*="pagead"], a[href*="aclk"], script[src]');
   candidates.forEach(el => {
     if (isTrackerScript(el)) removeNode(el, 'tracker'); else processNode(el);
@@ -243,20 +246,22 @@ function scanInitial() {
 }
 
 function observeMutations() {
-  const obs = new MutationObserver(muts => {
+  if (!extEnabled) return;
+  mutObs = new MutationObserver(muts => {
     for (const m of muts) {
       m.addedNodes && m.addedNodes.forEach(node => {
         if (node.nodeType === 1) processNode(node);
       });
     }
   });
-  obs.observe(document.documentElement || document.body, { childList: true, subtree: true });
+  try { mutObs.observe(document.documentElement || document.body, { childList: true, subtree: true }); } catch {}
 }
 
 // Offload scoring of heavy batches to worker
 let worker;
 function initWorker() {
   try {
+    if (!extEnabled) return;
     // Try extension worker first
     worker = new Worker(chrome.runtime.getURL('workers/ad_worker.js'));
   } catch {
@@ -329,15 +334,39 @@ chrome.runtime?.onMessage?.addListener((msg) => {
 
 // Init early
 try {
-  // Load debugDetailed from storage and watch changes
+  // Lecture initiale et écoute des réglages
   try {
-    chrome.storage?.local?.get?.(['debugDetailed','debugOverlay']).then(({ debugDetailed: dd = false, debugOverlay: dover = false }) => {
+    chrome.storage?.local?.get?.(['enabled','debugDetailed','debugOverlay']).then(({ enabled: en = true, debugDetailed: dd = false, debugOverlay: dover = false }) => {
+      extEnabled = en !== false;
       debugDetailed = !!dd;
       debugOverlayToggle = !!dover;
       updateOverlayState();
+      if (extEnabled) {
+        initWorker();
+        scanInitial();
+        observeMutations();
+        requestIdleCallback?.(() => {
+          const batch = document.querySelectorAll('iframe, img, a[href*="pagead"], img[src*="doubleclick"], script[src]');
+          batchScore(batch);
+        }, { timeout: 1500 });
+      }
     });
+
     chrome.storage?.onChanged?.addListener?.((changes, area) => {
       if (area === 'local' && changes) {
+        if (changes.enabled) {
+          const wasEnabled = extEnabled;
+          extEnabled = changes.enabled.newValue !== false;
+          updateOverlayState();
+          if (!extEnabled) {
+            try { mutObs?.disconnect?.(); } catch {}
+            closeDebugOverlay();
+          } else if (!wasEnabled && extEnabled) {
+            initWorker();
+            scanInitial();
+            observeMutations();
+          }
+        }
         if (changes.debugDetailed) {
           debugDetailed = !!changes.debugDetailed.newValue;
           pushLog({ msg: 'debugDetailed-update', enabled: debugDetailed });
@@ -350,13 +379,4 @@ try {
       }
     });
   } catch (_) {}
-
-  initWorker();
-  scanInitial();
-  observeMutations();
-  // Opportunistic batch scoring on idle
-  requestIdleCallback?.(() => {
-    const batch = document.querySelectorAll('iframe, img, a[href*="pagead"], img[src*="doubleclick"], script[src]');
-    batchScore(batch);
-  }, { timeout: 1500 });
 } catch {}

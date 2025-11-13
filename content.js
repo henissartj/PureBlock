@@ -13,6 +13,7 @@
   let performanceMode = false;
   let lastSponsorPurgeTs = 0;
   let lastQualityForceTs = 0;
+  let enabledGlobal = true; // Respecte le toggle global
 
   const domain = location.hostname.replace(/^www\./, '');
 
@@ -69,6 +70,7 @@
   }
 
   function attachScopedObservers() {
+    if (!enabledGlobal) return;
     if (observer) {
       try { observer.disconnect(); } catch {}
     }
@@ -265,13 +267,14 @@
   }
 
   async function startBlocking() {
-    const { pausedHosts = [], pureFocus = false, shortsBan = false, performanceMode: pm = false } = await chrome.storage.local.get(['pausedHosts','pureFocus','shortsBan','performanceMode']);
+    const { enabled = true, pausedHosts = [], pureFocus = false, shortsBan = false, performanceMode: pm = false } = await chrome.storage.local.get(['enabled','pausedHosts','pureFocus','shortsBan','performanceMode']);
+    enabledGlobal = enabled !== false;
     isPaused = Array.isArray(pausedHosts) && pausedHosts.includes(domain);
     enablePureFocus = pureFocus === true;
     enableShortsBan = shortsBan === true || enablePureFocus === true;
     performanceMode = pm === true;
 
-    if (isPaused) {
+    if (!enabledGlobal || isPaused) {
       resetInjectedStyles();
       return;
     }
@@ -331,13 +334,25 @@
   // Réagit aux changements de stockage pour une pause fiable
   if (chrome?.storage?.onChanged?.addListener) {
     chrome.storage.onChanged.addListener(async (changes) => {
+      if (changes.enabled) {
+        try {
+          enabledGlobal = changes.enabled.newValue !== false;
+          if (!enabledGlobal) {
+            if (observer) observer.disconnect();
+            if (cleanupInterval) clearInterval(cleanupInterval);
+            resetInjectedStyles();
+            return;
+          }
+          if (!isPaused) await startBlocking();
+        } catch {}
+      }
       if (changes.pausedHosts) {
         try {
           const list = changes.pausedHosts.newValue || [];
           const nowPaused = Array.isArray(list) && list.includes(domain);
           if (nowPaused !== isPaused) {
             isPaused = nowPaused;
-            if (isPaused) {
+            if (!enabledGlobal || isPaused) {
               if (observer) observer.disconnect();
               if (cleanupInterval) clearInterval(cleanupInterval);
               resetInjectedStyles();
@@ -358,7 +373,7 @@
           if (changes.performanceMode) {
             performanceMode = changes.performanceMode.newValue === true;
           }
-          if (!isPaused) {
+          if (enabledGlobal && !isPaused) {
             if (enableShortsBan) {
               removeShortsElements();
               hideShortsGuideEntries();

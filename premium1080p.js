@@ -13,19 +13,32 @@
   };
   const PREFERENCE = ['hd4320', 'hd2880', 'hd2160', 'hd1440', 'hd1080pPremium', 'hd1080', 'hd720', 'large', 'medium'];
   const CHECK_INTERVAL = 1200;
-  let isEnabled = true; // piloté par premium1080
+  let isEnabled = true; // piloté par premium1080 + enabled global
+  let enabledGlobal = true;
   let targetQuality = 'auto';
 
   // === RÉCUPÉRER L'ÉTAT SAUVEGARDÉ ===
-  chrome.storage.local.get(['premium1080', 'targetQuality'], (data) => {
-    isEnabled = data.premium1080 !== false;
+  chrome.storage.local.get(['enabled','premium1080', 'targetQuality'], (data) => {
+    enabledGlobal = data.enabled !== false;
+    isEnabled = (data.premium1080 !== false) && enabledGlobal;
     targetQuality = (data.targetQuality || 'auto');
   });
 
   // === ÉCOUTER LES CHANGEMENTS (popup, background, autre onglet) ===
   chrome.storage.onChanged.addListener((changes) => {
+    if (changes.enabled !== undefined) {
+      enabledGlobal = changes.enabled.newValue !== false;
+      isEnabled = enabledGlobal && isEnabled; // recalculé ci-dessous si premium1080 change aussi
+      if (!enabledGlobal) {
+        const player = document.getElementById('movie_player');
+        if (player && player.setPlaybackQuality) {
+          try { player.setPlaybackQuality('auto'); } catch {}
+        }
+      }
+    }
     if (changes.premium1080 !== undefined) {
-      isEnabled = changes.premium1080.newValue;
+      const premiumToggle = changes.premium1080.newValue !== false;
+      isEnabled = premiumToggle && enabledGlobal;
       if (!isEnabled) {
         const player = document.getElementById('movie_player');
         if (player && player.setPlaybackQuality) {

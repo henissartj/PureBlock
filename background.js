@@ -299,6 +299,18 @@ async function shouldBlockOnTab(tabId) {
   return !pausedSites[domain];
 }
 
+// Réagit aux changements globaux pour rafraîchir les règles de confidentialité
+if (api.storage?.onChanged?.addListener) {
+  api.storage.onChanged.addListener(async (changes, area) => {
+    try {
+      if (area === 'local' && changes?.enabled) {
+        // Applique/retire immédiatement les règles DNR selon ON/OFF
+        await initPrivacy();
+      }
+    } catch (e) {}
+  });
+}
+
 // Remplace syncEnabledRuleset pour vérifier par onglet
 async function syncEnabledRulesetForTab(tabId, enabled) {
   const shouldBlock = await shouldBlockOnTab(tabId);

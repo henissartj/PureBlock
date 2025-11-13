@@ -30,10 +30,19 @@ export async function initPrivacy() {
     console.warn("PureBlock privacy: DNR non dispo");
     return;
   }
-
-  const { stealthStrong = false } = await api.storage.local.get(['stealthStrong']);
+  const { enabled = true, stealthStrong = false } = await api.storage.local.get(['enabled','stealthStrong']);
   const removeRuleIds = Object.values(RULES);
   const addRules = [];
+
+  // Si l'extension est globalement OFF, retirer toutes les règles et sortir
+  if (enabled === false) {
+    try {
+      await api.declarativeNetRequest.updateDynamicRules({ removeRuleIds, addRules: [] });
+    } catch (e) {
+      console.warn("PureBlock privacy: échec remove rules (OFF)", e);
+    }
+    return;
+  }
 
   // UA pour YouTube web
   addRules.push({
