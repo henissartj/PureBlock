@@ -9,6 +9,7 @@
   let cosmeticsStyleEl = null;
   let rootsObserver = null;
   let enablePureFocus = false;
+  let enableShortsBan = false;
 
   const domain = location.hostname.replace(/^www\./, '');
 
@@ -30,7 +31,14 @@
 
   function injectCosmeticCSS() {
     if (cosmeticsStyleEl) return;
-    const css = cosmeticFilters.map((f) => `${f.selector}{${f.style}}`).join('\n');
+    const base = `@keyframes pbStrikeFade{0%{opacity:1;filter:contrast(1)}30%{opacity:.8;filter:contrast(1.2)}60%{opacity:.4;filter:contrast(1.4)}100%{opacity:0;filter:contrast(1.6)}}
+    .pb-hide-strike{position:relative;animation:pbStrikeFade .28s ease-in forwards}
+    .pb-hide-stripe::after{content:'';position:absolute;left:0;top:0;width:100%;height:100%;background:repeating-linear-gradient(135deg,rgba(255,0,0,0.18) 0,rgba(255,0,0,0.18) 6px,transparent 6px,transparent 12px);pointer-events:none}`;
+    const css = base + "\n" + cosmeticFilters.map((f) => `${f.selector}{${f.style}}`).join('\n') + "\n" + [
+      // Shorts-specific hiding by CSS to collapse quickly
+      'ytd-reel-shelf-renderer, ytd-reel-item-renderer, ytd-reel-video-renderer, ytd-reel-player-overlay-renderer, ytd-reel-player-renderer { display:none !important; visibility:hidden !important; height:0 !important; }',
+      'a[href^="/shorts"], a[href*="youtube.com/shorts"] { display:none !important; visibility:hidden !important; }'
+    ].join('\n');
     cosmeticsStyleEl = document.createElement('style');
     cosmeticsStyleEl.id = 'pb-cosmetics';
     cosmeticsStyleEl.textContent = css;
@@ -115,7 +123,7 @@
     requestIdleCallback(() => {
       try {
         applyCosmetic();
-        if (enablePureFocus) {
+        if (enableShortsBan) {
           removeShortsElements();
           hideShortsGuideEntries();
         }
@@ -141,10 +149,7 @@
       let removed = 0;
       for (const sel of selectors) {
         document.querySelectorAll(sel).forEach(el => {
-          try {
-            el.remove();
-            removed++;
-          } catch {}
+          try { animateRemoval(el); removed++; } catch {}
         });
       }
       // Stats globales gérées ailleurs; on reste léger ici.
@@ -161,8 +166,31 @@
         document.querySelectorAll(sel).forEach(a => {
           try {
             const parent = a.closest('ytd-guide-entry-renderer') || a.closest('ytd-mini-guide-entry-renderer');
-            (parent || a).style.setProperty('display','none','important');
-            (parent || a).style.setProperty('visibility','hidden','important');
+            const node = parent || a;
+            node.style.setProperty('display','none','important');
+            node.style.setProperty('visibility','hidden','important');
+          } catch {}
+        });
+      }
+    } catch {}
+  }
+
+  function hideShortsCreateControls() {
+    try {
+      const candidates = [
+        'ytd-topbar-menu-button-renderer',
+        'tp-yt-paper-item',
+        'ytd-rich-menu-renderer'
+      ];
+      for (const sel of candidates) {
+        document.querySelectorAll(sel).forEach(el => {
+          try {
+            const txt = (el.textContent || '').toLowerCase();
+            const aria = (el.getAttribute('aria-label') || '').toLowerCase();
+            if (txt.includes('short') || aria.includes('short')) {
+              el.style.setProperty('display','none','important');
+              el.style.setProperty('visibility','hidden','important');
+            }
           } catch {}
         });
       }
@@ -171,7 +199,7 @@
 
   function maybeRedirectShorts() {
     try {
-      if (!enablePureFocus) return;
+      if (!enableShortsBan) return;
       const path = location.pathname || '';
       if (path.startsWith('/shorts/')) {
         const id = path.replace('/shorts/','').split('/')[0];
@@ -221,9 +249,10 @@
   }
 
   async function startBlocking() {
-    const { pausedHosts = [], pureFocus = false } = await chrome.storage.local.get(['pausedHosts','pureFocus']);
+    const { pausedHosts = [], pureFocus = false, shortsBan = false } = await chrome.storage.local.get(['pausedHosts','pureFocus','shortsBan']);
     isPaused = Array.isArray(pausedHosts) && pausedHosts.includes(domain);
     enablePureFocus = pureFocus === true;
+    enableShortsBan = shortsBan === true || enablePureFocus === true;
 
     if (isPaused) {
       resetInjectedStyles();
@@ -236,10 +265,11 @@
     attachScopedObservers();
 
     applyCosmetic();
-    if (enablePureFocus) {
+    if (enableShortsBan) {
       removeShortsElements();
       hideShortsGuideEntries();
       maybeRedirectShorts();
+      hideShortsCreateControls();
     }
     handleAds();
     forcePremiumQuality();
@@ -300,14 +330,20 @@
           }
         } catch {}
       }
-      if (changes.pureFocus) {
+      if (changes.pureFocus || changes.shortsBan) {
         try {
-          enablePureFocus = changes.pureFocus.newValue === true;
+          if (changes.pureFocus) {
+            enablePureFocus = changes.pureFocus.newValue === true;
+          }
+          if (changes.shortsBan) {
+            enableShortsBan = changes.shortsBan.newValue === true || enablePureFocus === true;
+          }
           if (!isPaused) {
-            if (enablePureFocus) {
+            if (enableShortsBan) {
               removeShortsElements();
               hideShortsGuideEntries();
               maybeRedirectShorts();
+              hideShortsCreateControls();
             } else {
               // reveal previously hidden guide entries; the shelves will be regenerated by YouTube
               document.querySelectorAll('ytd-mini-guide-entry-renderer, ytd-guide-entry-renderer').forEach(el => {
@@ -323,3 +359,9 @@
     });
   }
 })();
+  function animateRemoval(el) {
+    try {
+      el.classList.add('pb-hide-strike','pb-hide-stripe');
+      el.addEventListener('animationend', () => { try { el.remove(); } catch {} }, { once: true });
+    } catch { try { el.remove(); } catch {} }
+  }

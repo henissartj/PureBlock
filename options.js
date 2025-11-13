@@ -97,6 +97,7 @@ function init() {
   api.storage.local.get(
     [
       'pureFocus',
+      'shortsBan',
       'sponsorSkip',
       'debugOverlay',
       'allowedChannels',
@@ -113,6 +114,10 @@ function init() {
     (data) => {
       document.getElementById('purefocus-toggle').checked =
         data.pureFocus === true;
+      const shortsBanEl = document.getElementById('shortsban-toggle');
+      if (shortsBanEl) {
+        shortsBanEl.checked = data.shortsBan === true;
+      }
       document.getElementById('sponsor-toggle').checked =
         data.sponsorSkip === true;
       document.getElementById('debug-toggle').checked =
@@ -156,6 +161,11 @@ function init() {
   // Toggles
   document.getElementById('purefocus-toggle').addEventListener('change', (e) => {
     api.storage.local.set({ pureFocus: e.target.checked });
+  });
+
+  const shortsBanEl = document.getElementById('shortsban-toggle');
+  shortsBanEl?.addEventListener('change', (e) => {
+    api.storage.local.set({ shortsBan: e.target.checked });
   });
 
   document.getElementById('sponsor-toggle').addEventListener('change', (e) => {

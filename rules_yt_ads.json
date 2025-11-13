@@ -177,4 +177,29 @@
       "resourceTypes": ["media"]
     }
   }
+  ,
+  {
+    "id": 50,
+    "priority": 2,
+    "action": {
+      "type": "redirect",
+      "redirect": {
+        "regexSubstitution": "https://www.youtube.com/watch?v=\\2\\3"
+      }
+    },
+    "condition": {
+      "regexFilter": "https?:\\/\\/([^\\/]*\\.)?youtube\\.com\\/shorts\\/([^?&#/]+)(.*)",
+      "resourceTypes": ["main_frame", "sub_frame"]
+    }
+  }
+  ,
+  {
+    "id": 51,
+    "priority": 2,
+    "action": { "type": "block" },
+    "condition": {
+      "urlFilter": "*://*.youtube.com/youtubei/v1/shorts/*",
+      "resourceTypes": ["xmlhttprequest"]
+    }
+  }
 ]

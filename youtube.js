@@ -114,7 +114,8 @@ function isAudioResponse(url, res){
 
 // Anti‑pub: assainir les réponses player et la variable ytInitialPlayerResponse
 initAdResponseSanitizer();
-initXHRAdSanitizer();
+  initXHRAdSanitizer();
+  initXHRShortsSanitizer();
 initBeaconKiller();
 initImagePixelGuard();
 
@@ -175,6 +176,23 @@ function initAdResponseSanitizer() {
             // Reprendre un minimum d'en‑têtes utiles
             res.headers && res.headers.forEach((v,k)=>{ headers.set(k,v); });
             return new Response(body, { status: res.status, statusText: res.statusText, headers });
+          } else if (/\/youtubei\/v1\/(browse|search|next)/.test(url)) {
+            // Sanitize feeds to eradicate Shorts/Reels content
+            const clone = res.clone();
+            let bodyText = null;
+            try { bodyText = await clone.text(); } catch {}
+            if (bodyText && bodyText.trim().startsWith('{')) {
+              try {
+                const obj = JSON.parse(bodyText);
+                const clean = sanitizeFeedJson(obj);
+                const body = JSON.stringify(clean);
+                const headers = new Headers();
+                res.headers && res.headers.forEach((v,k)=>{ headers.set(k,v); });
+                return new Response(body, { status: res.status, statusText: res.statusText, headers });
+              } catch (e) {
+                // fallback: return original
+              }
+            }
           }
         } catch (e) {
           // Si une erreur survient, on renvoie la réponse originale
@@ -368,6 +386,45 @@ function initXHRAdSanitizer() {
     }
     PB_XHR.__pbWrapped = true;
     window.XMLHttpRequest = PB_XHR;
+  } catch (e) {}
+}
+
+// XHR sanitizer pour supprimer Shorts/Reels des payloads browse/search/next
+function initXHRShortsSanitizer() {
+  try {
+    const OrigXHR = window.XMLHttpRequest;
+    if (!OrigXHR || OrigXHR.__pbShortsWrapped) return;
+    function PB_XHR2() {
+      const xhr = new OrigXHR();
+      let url = '';
+      const origOpen = xhr.open;
+      xhr.open = function(method, u){ url = String(u||''); return origOpen.apply(xhr, arguments); };
+      const sanitize = () => {
+        try {
+          if (/\/youtubei\/v1\/(browse|search|next)/.test(url)) {
+            if (xhr.responseType === '' || xhr.responseType === 'text') {
+              const txt = xhr.responseText;
+              try {
+                const obj = JSON.parse(txt);
+                const clean = sanitizeFeedJson(obj);
+                const str = JSON.stringify(clean);
+                Object.defineProperty(xhr, 'responseText', { configurable: true, get(){ return str; } });
+                Object.defineProperty(xhr, 'response', { configurable: true, get(){ return str; } });
+              } catch {}
+            } else if (xhr.responseType === 'json' && xhr.response) {
+              try {
+                const clean = sanitizeFeedJson(xhr.response);
+                Object.defineProperty(xhr, 'response', { configurable: true, get(){ return clean; } });
+              } catch {}
+            }
+          }
+        } catch {}
+      };
+      xhr.addEventListener('readystatechange', () => { if (xhr.readyState === 4) sanitize(); });
+      return xhr;
+    }
+    PB_XHR2.__pbShortsWrapped = true;
+    window.XMLHttpRequest = PB_XHR2;
   } catch (e) {}
 }
 
@@ -1178,4 +1235,44 @@ function annotateStatsPanelSafe(){
       if (line.textContent !== text) line.textContent = text;
     }
   } catch (e) {}
+}
+// Sanitize Shorts/Reel from browse/search/next payloads
+function sanitizeFeedJson(obj){
+  try {
+    if (!obj || typeof obj !== 'object') return obj;
+    const killRenderer = (node) => {
+      if (!node || typeof node !== 'object') return false;
+      const keys = Object.keys(node);
+      for (const k of keys) {
+        if (/reel|shorts/i.test(k)) return true; // renderer type contains shorts
+      }
+      // also check known shelf types
+      if (node?.shelfRenderer?.title?.simpleText && /shorts/i.test(node.shelfRenderer.title.simpleText)) return true;
+      return false;
+    };
+    const walkArray = (arr) => {
+      if (!Array.isArray(arr)) return arr;
+      const out = [];
+      for (const item of arr) {
+        if (killRenderer(item)) continue;
+        out.push(walk(item));
+      }
+      return out;
+    };
+    const walk = (node) => {
+      if (!node || typeof node !== 'object') return node;
+      if (killRenderer(node)) return undefined;
+      if (Array.isArray(node)) return walkArray(node);
+      const res = {};
+      for (const [k,v] of Object.entries(node)) {
+        if (killRenderer({ [k]: v })) continue;
+        const w = walk(v);
+        if (w !== undefined) res[k] = w;
+      }
+      return res;
+    };
+    return walk(obj);
+  } catch {
+    return obj;
+  }
 }
