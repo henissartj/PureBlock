@@ -756,6 +756,7 @@ function bootstrap() {
   observeAds();
   attachPlayerObserver();
   safeClean();
+  attachPlaybackGuard();
   hookNavigationWake();
   injectDownloadButton();
   observeControlsForDownloadButton();
@@ -927,7 +928,10 @@ function attachPlayerObserver() {
       idleScheduled = true;
       const cb = () => {
         idleScheduled = false;
-        if (enabled && !sleeping) safeClean();
+        if (enabled && !sleeping) {
+          safeClean();
+          attachPlaybackGuard();
+        }
       };
       if ("requestIdleCallback" in window) {
         requestIdleCallback(cb, { timeout: 120 });
@@ -1046,6 +1050,10 @@ function handlePlayerAds() {
         video.muted = prevMuted;
         prevMuted = null;
       }
+      // Filet de sécurité: si des listeners externes ont modifié la vitesse, corriger
+      if (video.playbackRate !== 1) {
+        try { video.playbackRate = 1; } catch (_) {}
+      }
       // Reprendre la lecture uniquement si on sort d'un état pub
       if (window.__pbLastWasAd) {
         video.play?.();
@@ -1093,6 +1101,52 @@ function maybeSleep() {
   if (!sleeping && Date.now() - lastAdTs > SLEEP_AFTER_MS) {
     sleep();
   }
+}
+
+// Détection d'état pub réutilisable
+function isAdState() {
+  try {
+    const player = document.querySelector('.html5-video-player');
+    if (!player) return false;
+    return (
+      player.classList.contains('ad-showing') ||
+      player.classList.contains('ad-interrupting') ||
+      !!document.querySelector('.ytp-ad-player-overlay') ||
+      !!document.querySelector('.ytp-ad-module')
+    );
+  } catch (_) { return false; }
+}
+
+// Gardien lecture: s'assure que la vitesse revient à 1x hors pub
+function attachPlaybackGuard() {
+  try {
+    const video = document.querySelector('video.html5-main-video');
+    if (!video || video.__pbPlaybackGuard) return;
+
+    const normalize = () => {
+      try {
+        if (!isAdState()) {
+          if (video.playbackRate !== 1) {
+            video.playbackRate = 1;
+          }
+          if (prevMuted !== null) {
+            video.muted = prevMuted;
+            prevMuted = null;
+          }
+        }
+      } catch (_) {}
+    };
+
+    video.addEventListener('ratechange', normalize, { passive: true });
+    video.addEventListener('playing', normalize, { passive: true });
+    video.addEventListener('loadedmetadata', normalize, { passive: true });
+    video.addEventListener('loadeddata', normalize, { passive: true });
+    video.addEventListener('ended', normalize, { passive: true });
+    // Lance une normalisation initiale
+    setTimeout(normalize, 50);
+
+    video.__pbPlaybackGuard = true;
+  } catch (_) {}
 }
 
 // Aligne avec background.js : { action: "incrementStats", blocked, bytes }
@@ -1221,9 +1275,40 @@ function annotateStatsPanelSafe(){
     const panel = document.querySelector('.html5-video-info-panel-content');
     if (!panel || !panel.isConnected) return;
     let line = panel.querySelector('.pureblock-stats-line');
-    const text = enabled
-      ? `PureBlock Bitrate Booster: ${bitrateBoost ? 'ON' : 'OFF'} · HDR: ${preferHDR ? 'ON' : 'OFF'} · Codec: ${codecPref.toUpperCase()}`
-      : 'PureBlock: OFF';
+    // Collecte légère de métriques côté player
+    const v = getMainVideo();
+    let fpsEst = null, dropped = null, total = null, res = null, rate = null;
+    try {
+      if (v) {
+        const q = (typeof v.getVideoPlaybackQuality === 'function') ? v.getVideoPlaybackQuality() : null;
+        const now = performance.now();
+        const frames = q && typeof q.totalVideoFrames === 'number' ? q.totalVideoFrames : (v.webkitDecodedFrameCount || null);
+        const prevFrames = window.__pbPrevFrames || null;
+        const prevTs = window.__pbPrevTs || null;
+        if (frames != null && prevFrames != null && prevTs != null && now > prevTs) {
+          const df = frames - prevFrames;
+          const dt = (now - prevTs) / 1000;
+          if (df >= 0 && dt > 0.05) fpsEst = Math.round((df / dt) * 10) / 10; // arrondi 0.1
+        }
+        window.__pbPrevFrames = frames;
+        window.__pbPrevTs = now;
+        dropped = q && typeof q.droppedVideoFrames === 'number' ? q.droppedVideoFrames : (v.webkitDroppedFrameCount || null);
+        total = frames;
+        res = (v.videoWidth && v.videoHeight) ? `${v.videoWidth}×${v.videoHeight}` : null;
+        rate = typeof v.playbackRate === 'number' ? v.playbackRate.toFixed(2) : null;
+      }
+    } catch(_){ }
+    const throttleMbps = gvCurrentIs4K ? gvMbps4K : gvThrottleMbps;
+    const bits = [];
+    if (enabled) bits.push(`Bitrate Booster: ${bitrateBoost ? 'ON' : 'OFF'}`);
+    bits.push(`HDR: ${preferHDR ? 'ON' : 'OFF'}`);
+    bits.push(`Codec: ${String(codecPref || 'auto').toUpperCase()}`);
+    if (res) bits.push(`Résolution: ${res}`);
+    if (fpsEst != null) bits.push(`FPS~ ${fpsEst}`);
+    if (dropped != null && total != null) bits.push(`Dropped: ${dropped}/${total}`);
+    if (rate != null) bits.push(`Vitesse: ${rate}×`);
+    bits.push(`Pacing: ${throttleMbps} Mbps${gvCurrentIs4K ? ' (4K)' : ''}`);
+    const text = enabled ? `PureBlock · ${bits.join(' · ')}` : 'PureBlock: OFF';
     if (!line) {
       line = document.createElement('div');
       line.className = 'pureblock-stats-line';
