@@ -977,6 +977,7 @@ function safeClean() {
   try {
     hideStaticAds();
     handlePlayerAds();
+    fixGuideOverlay();
     maybeSleep();
   } catch (e) {
     // On reste silencieux pour ne pas spammer la console utilisateur
@@ -1025,11 +1026,10 @@ function handlePlayerAds() {
   const video = document.querySelector("video.html5-main-video");
   if (!video || !player) return;
 
+  // Détection stricte: on s'appuie uniquement sur les classes du player
   const isAd =
     player.classList.contains("ad-showing") ||
-    player.classList.contains("ad-interrupting") ||
-    document.querySelector(".ytp-ad-player-overlay") ||
-    document.querySelector(".ytp-ad-module");
+    player.classList.contains("ad-interrupting");
 
   // Mémoire d'état pub pour éviter d'interférer avec l'UI (ex: menu paramètres)
   window.__pbLastWasAd = window.__pbLastWasAd || false;
@@ -1064,8 +1064,8 @@ function handlePlayerAds() {
   }
 
   const skipBtn =
-    document.querySelector(".ytp-ad-skip-button") ||
-    document.querySelector(".ytp-ad-skip-button-modern");
+    (isAd && (document.querySelector(".ytp-ad-skip-button") ||
+    document.querySelector(".ytp-ad-skip-button-modern")));
 
   if (skipBtn) {
     skipBtn.click();
@@ -1110,9 +1110,7 @@ function isAdState() {
     if (!player) return false;
     return (
       player.classList.contains('ad-showing') ||
-      player.classList.contains('ad-interrupting') ||
-      !!document.querySelector('.ytp-ad-player-overlay') ||
-      !!document.querySelector('.ytp-ad-module')
+      player.classList.contains('ad-interrupting')
     );
   } catch (_) { return false; }
 }
@@ -1147,6 +1145,31 @@ function attachPlaybackGuard() {
 
     video.__pbPlaybackGuard = true;
   } catch (_) {}
+}
+
+// Corrige l’apparition du tiroir de navigation à gauche qui recouvre le player au chargement
+function fixGuideOverlay() {
+  try {
+    const drawer = document.querySelector('tp-yt-app-drawer');
+    const app = document.querySelector('ytd-app');
+    const isOpen = drawer && (drawer.hasAttribute('opened') || drawer.opened === true);
+    const onWatch = /\/watch\?/.test(location.href);
+    if (onWatch && isOpen) {
+      // Fermer proprement via Escape pour laisser l’app gérer l’état interne
+      const evt = new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', bubbles: true });
+      window.dispatchEvent(evt);
+      // Filet: si toujours ouvert, essayer de retirer l’attribut
+      setTimeout(() => {
+        try {
+          const stillOpen = drawer && (drawer.hasAttribute('opened') || drawer.opened === true);
+          if (stillOpen) drawer.removeAttribute('opened');
+          // Et restaurer le focus au player
+          const player = document.querySelector('.html5-video-player');
+          player?.focus?.();
+        } catch(_){}
+      }, 120);
+    }
+  } catch(_){}
 }
 
 // Aligne avec background.js : { action: "incrementStats", blocked, bytes }
