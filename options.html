@@ -215,29 +215,7 @@
             <input type="checkbox" id="sponsor-toggle">
           </div>
 
-          <div class="toggle-row">
-            <div>
-              <span class="label">Badge debug léger</span>
-              <small>Overlay minimal pour t'aider à diagnostiquer les changements YouTube.</small>
-            </div>
-            <input type="checkbox" id="debug-toggle">
-          </div>
-
-          <div class="toggle-row">
-            <div>
-              <span class="label">Logs précis de débogage</span>
-              <small>Active la collecte détaillée et l'overlay pour inspecter facilement.</small>
-            </div>
-            <input type="checkbox" id="debug-detailed-toggle">
-          </div>
-
-          <div class="toggle-row">
-            <div>
-              <span class="label">Console de debug</span>
-              <small>Ouvre un panneau au-dessus de la page pour afficher les logs.</small>
-            </div>
-            <button id="open-debug-overlay-btn">Ouvrir</button>
-          </div>
+          
 
           <div class="toggle-row">
             <div>
@@ -311,6 +289,29 @@
 
       <!-- Colonne droite -->
       <div>
+        <div class="card">
+          <h2>Debug & diagnostic</h2>
+          <p>Active la console et les logs précis pour tout site.</p>
+
+          <div class="toggle-row">
+            <div>
+              <span class="label">Console de debug (léger)</span>
+              <small>Affiche un overlay simple sur chaque page quand activé.</small>
+            </div>
+            <input type="checkbox" id="debug-toggle">
+          </div>
+
+          <div class="toggle-row">
+            <div>
+              <span class="label">Logs précis de débogage</span>
+              <small>Ajoute des traces détaillées aux décisions de blocage.</small>
+            </div>
+            <input type="checkbox" id="debug-detailed-toggle">
+          </div>
+
+          <div class="hint">Lorsque activé, la console s'affiche automatiquement sur toutes les pages.</div>
+        </div>
+
         <div class="card">
           <h2>Whitelist chaînes YouTube</h2>
           <p>Autorise l'affichage normal sur tes créateurs favoris.</p>

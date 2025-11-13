@@ -75,6 +75,7 @@ let blockedCount = 0;
 // Debug overlay & detailed logs
 let debugDetailed = false;
 let debugOverlayEnabled = false;
+let debugOverlayToggle = false;
 let debugLogs = [];
 let debugOverlayEl = null;
 
@@ -179,6 +180,17 @@ function closeDebugOverlay() {
   try {
     debugOverlayEnabled = false;
     if (debugOverlayEl && debugOverlayEl.parentNode) debugOverlayEl.parentNode.removeChild(debugOverlayEl);
+  } catch (_) {}
+}
+
+function updateOverlayState() {
+  try {
+    const shouldOpen = !!(debugOverlayToggle || debugDetailed);
+    if (shouldOpen && !debugOverlayEnabled) {
+      openDebugOverlay();
+    } else if (!shouldOpen && debugOverlayEnabled) {
+      closeDebugOverlay();
+    }
   } catch (_) {}
 }
 
@@ -319,11 +331,22 @@ chrome.runtime?.onMessage?.addListener((msg) => {
 try {
   // Load debugDetailed from storage and watch changes
   try {
-    chrome.storage?.local?.get?.(['debugDetailed']).then(({ debugDetailed: dd = false }) => { debugDetailed = !!dd; });
+    chrome.storage?.local?.get?.(['debugDetailed','debugOverlay']).then(({ debugDetailed: dd = false, debugOverlay: dover = false }) => {
+      debugDetailed = !!dd;
+      debugOverlayToggle = !!dover;
+      updateOverlayState();
+    });
     chrome.storage?.onChanged?.addListener?.((changes, area) => {
-      if (area === 'local' && changes && changes.debugDetailed) {
-        debugDetailed = !!changes.debugDetailed.newValue;
-        pushLog({ msg: 'debugDetailed-update', enabled: debugDetailed });
+      if (area === 'local' && changes) {
+        if (changes.debugDetailed) {
+          debugDetailed = !!changes.debugDetailed.newValue;
+          pushLog({ msg: 'debugDetailed-update', enabled: debugDetailed });
+        }
+        if (changes.debugOverlay) {
+          debugOverlayToggle = !!changes.debugOverlay.newValue;
+          pushLog({ msg: 'debugOverlay-update', enabled: debugOverlayToggle });
+        }
+        updateOverlayState();
       }
     });
   } catch (_) {}

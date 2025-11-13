@@ -68,7 +68,6 @@ function init() {
   const stealthToggleEl = document.getElementById('stealth-strong-toggle');
   const performanceToggleEl = document.getElementById('performance-toggle');
   const debugDetailedToggleEl = document.getElementById('debug-detailed-toggle');
-  const openDebugOverlayBtn = document.getElementById('open-debug-overlay-btn');
 
   if (!hasApi) {
     // Mode aperçu hors contexte extension: valeurs par défaut, pas de persistance
@@ -92,7 +91,6 @@ function init() {
     qualitySelectEl?.addEventListener('change', () => {});
     stealthToggleEl?.addEventListener('change', () => {});
     performanceToggleEl?.addEventListener('change', () => {});
-    openDebugOverlayBtn?.addEventListener('click', () => {});
 
     // Listes locales vides en aperçu
     renderChannels();
@@ -220,16 +218,7 @@ function init() {
     });
   }
 
-  // Open overlay on current tab
-  openDebugOverlayBtn?.addEventListener('click', () => {
-    try {
-      api.tabs?.query?.({ active: true, currentWindow: true }, (tabs) => {
-        if (tabs && tabs[0] && tabs[0].id) {
-          api.tabs?.sendMessage?.(tabs[0].id, { type: 'open_debug_overlay' });
-        }
-      });
-    } catch (_) {}
-  });
+  // Overlay s’active automatiquement via les toggles; aucun bouton nécessaire.
 
   const bitrateBoostEl = document.getElementById('bitrate-boost-toggle');
   bitrateBoostEl?.addEventListener('change', (e) => {
